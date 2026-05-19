@@ -1,0 +1,230 @@
+api/src/checkout/shipping.spec.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_6a7b9e4e0e0b85 2-11
+.agents/skills/stripe-projects/SKILL.md
+  s_a19009a056668f::t_e697f76679e8e2 1-139
+lib/product-filters.ts
+  s_a19009a056668f::t_aa5b8f54af4911 16,19,26-27
+api/src/common/http-exception.filter.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_e79de5eb0216e7 2-26
+.agents/skills/stripe-best-practices/SKILL.md
+  s_a19009a056668f::t_e697f76679e8e2 1-44
+api/src/checkout/checkout.controller.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_7296a7c053db54 2-14
+api/jest.config.js
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-7
+api/src/products/dto/product-query.dto.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_4e6b2439c4e1b6 2-36
+api/src/products/products.service.ts
+  s_a19009a056668f::t_4e6b2439c4e1b6 2-91
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/collections/collections.service.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_04b1c942b8e09d 2-41
+lib/utils.ts
+  s_a19009a056668f::t_c7056216cf50af 15-22
+app/page.tsx
+  s_a19009a056668f::t_3108574585cf62 4,20,35,38,45-54
+api/src/collections/collections.controller.ts
+  s_a19009a056668f::t_04b1c942b8e09d 2-18
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/payments/payment-provider.interface.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_75f5e1d31cb06a 2-10,12-30
+  s_a19009a056668f::t_1cbbb34c950267 11
+components/collection-view.tsx
+  s_a19009a056668f::t_a8d1923854ea39 4-6,10-13,21-24,26-29,34-40,43,52,56-57,80
+  s_a19009a056668f::t_15441f7319c40e 30-33
+  s_a19009a056668f::t_8615f0c931ab2e 41,51
+api/tsconfig.json
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-20
+README.md
+  s_a19009a056668f::t_2b38a5b9edc565 1,3,5,7-48,50-65,69-86,90,92-114,117-118,121-123,126-128,131,133-136,138,140,142,144,146-150,152,154,156-178,180-182,184-187,189,191-195,197,199-206
+app/collections/[category]/page.tsx
+  s_a19009a056668f::t_83e583d840cfb8 13
+.agents/skills/stripe-best-practices/references/billing.md
+  s_a19009a056668f::t_e697f76679e8e2 1-36
+app/products/[slug]/page.tsx
+  s_a19009a056668f::t_7936c8064dae34 1-45
+.gitignore
+  s_a19009a056668f::t_97fef414b69930 10-11
+components/cart-provider.tsx
+  s_a19009a056668f::t_d9797db3e4360e 4,6,14-17,23,38,46-47,49,51,55-64,69-70,73,79
+api/src/orders/orders.service.ts
+  s_a19009a056668f::t_04d2c36e10e2d2 2-21
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/checkout/checkout.module.ts
+  s_a19009a056668f::t_7296a7c053db54 2-3,5-10,12
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_030041a8651e26 4,11,13
+api/src/products/products.controller.ts
+  s_a19009a056668f::t_4e6b2439c4e1b6 2-19
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/checkout/dto/create-checkout-session.dto.ts
+  s_a19009a056668f::t_75f5e1d31cb06a 2-31
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/checkout/checkout.service.ts
+  s_a19009a056668f::t_7296a7c053db54 2-3,5,7-11,13-33,35-37,39-68,94,96-103
+  s_a19009a056668f::t_397e3f14958969 34,91,95
+  s_a19009a056668f::t_c11b33d564acf8 6,38
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_35e362e7c9900d 4,12,69-90,92-93
+.agents/skills/upgrade-stripe/SKILL.md
+  s_a19009a056668f::t_e697f76679e8e2 1-185
+api/src/webhooks/stripe-webhook.module.ts
+  s_a19009a056668f::t_62e68c6052b165 5-8,10,12
+  s_a19009a056668f::t_119c57d562d40e 2-4,9,11,13
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+package.json
+  s_a19009a056668f::t_55fa186721086d 7-8,10,12-16,40-41
+api/src/orders/orders.module.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_04d2c36e10e2d2 2-10
+api/src/common/prisma.service.ts
+  s_a19009a056668f::t_e79de5eb0216e7 2-4,6-9
+  s_a19009a056668f::t_ffd8a1bd739547 1,5
+api/src/webhooks/stripe-webhook.service.ts
+  s_a19009a056668f::t_6edf0062e3cd8a 1-14,21-46,50-80,82-124,127-181,184-186,190-204,209
+  s_a19009a056668f::t_67d6f102b6a95f 15-20,182-183,187-189
+  s_a19009a056668f::t_9176c18c74988a 47-49,205-208
+  s_a19009a056668f::t_36cd85c65bda73 81
+  s_a19009a056668f::t_c0548ec4c9ad72 125-126
+api/eslint.config.mjs
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-16
+docker-compose.yml
+  s_a19009a056668f::t_bfd7a7a21a8262 1-15
+api/src/orders/orders.controller.ts
+  s_a19009a056668f::t_04d2c36e10e2d2 2-18
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+lib/api-client.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_340b7679d7e076 2-56
+app/checkout/success/page.tsx
+  s_a19009a056668f::t_7936c8064dae34 1
+  s_a19009a056668f::t_d1a99735ff61f4 2-4,6-12,17-69
+  s_a19009a056668f::t_cb3ad8d9acc067 5,13-16,70
+eslint.config.mjs
+  s_a19009a056668f::t_802a3d93175a28 4-8
+.agents/skills/stripe-best-practices/references/security.md
+  s_a19009a056668f::t_e697f76679e8e2 1-109
+.agents/skills/stripe-best-practices/references/treasury.md
+  s_a19009a056668f::t_e697f76679e8e2 1-16
+.env.example
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-9,11-18
+  s_84dc9fbb321b7f::t_cf6930221699d2 10
+api/src/payments/stripe-payment.provider.spec.ts
+  s_84dc9fbb321b7f::t_a88df671cb6664 1-58
+app/product/[slug]/page.tsx
+  s_a19009a056668f::t_470267f0c51633 3,9,13,15,21-23,36-38,41-42
+api/src/payments/stripe-payment.provider.ts
+  s_a19009a056668f::t_17e23e25c3e7df 1,16-19
+  s_a19009a056668f::t_876e777a7fc265 12
+  s_a19009a056668f::t_d357922a0ca886 66-68,71-76
+  s_a19009a056668f::t_5532a00bc713ed 23-42
+  s_84dc9fbb321b7f::t_02fd69212f2665 20,58
+  s_a19009a056668f::t_75f5e1d31cb06a 2-11,13-15,21-22,43-56,59-65,69-70
+  s_a19009a056668f::t_b0e4dd0b30bd28 57
+components/cart-drawer.tsx
+  s_a19009a056668f::t_f7f60c3f1cece9 6-9,13-14,16-36,43-44,46-50,52
+components/product-purchase-panel.tsx
+  s_a19009a056668f::t_efeaca29ae450c 3,6,12-14,16-30,37,45-48,51,53,58
+app/cart/page.tsx
+  s_a19009a056668f::t_edb649bc7c0de7 4-6,9,12-13,15-36,40,45,49,51-54
+api/src/main.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_e79de5eb0216e7 2-5,7-14,16-19,21-28
+  s_a19009a056668f::t_1280ff5426c5ca 20
+  s_a19009a056668f::t_397e3f14958969 6,15
+tsconfig.json
+  s_a19009a056668f::t_8456fd64eae416 4,16-17,19-20
+api/src/common/api-response.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_e79de5eb0216e7 2-10
+skills-lock.json
+  s_a19009a056668f::t_e697f76679e8e2 1-20
+api/prisma/seed.ts
+  s_a19009a056668f::t_5ea84acbba763d 2-272
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/checkout/shipping.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_6a7b9e4e0e0b85 2-6
+.agents/skills/stripe-best-practices/references/payments.md
+  s_a19009a056668f::t_e697f76679e8e2 1-79
+api/nest-cli.json
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-7
+api/package.json
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_7b9c8e8ae824f2 21,24,50
+  s_a19009a056668f::t_bfd7a7a21a8262 2-19,22-23,25-39,41-49
+  s_a19009a056668f::t_18411fe66e5942 20,40
+api/src/products/products.module.ts
+  s_a19009a056668f::t_4e6b2439c4e1b6 2-11
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/app.module.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_e79de5eb0216e7 2-24
+api/prisma/schema.prisma
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_ed72a1993712dc 2-6,8-175
+  s_a19009a056668f::t_a9bc572dbfc422 7
+api/prisma/migrations/0001_init/migration.sql
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_ed72a1993712dc 2-150
+components/product-card.tsx
+  s_a19009a056668f::t_29073804792336 6,22,36,41
+data/products.ts
+  s_a19009a056668f::t_83e583d840cfb8 3,177
+  s_a19009a056668f::t_31214dcbf0e8d0 172
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+api/src/collections/collections.module.ts
+  s_a19009a056668f::t_04b1c942b8e09d 2-10
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+lib/types.ts
+  s_a19009a056668f::t_340b7679d7e076 3-14,20-22,26,29,33,36,49,53,58-81
+.agents/skills/stripe-best-practices/references/connect.md
+  s_a19009a056668f::t_e697f76679e8e2 1-48
+api/tsconfig.build.json
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_bfd7a7a21a8262 2-4
+api/src/health/health.controller.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_04b1c942b8e09d 2-10
+api/src/webhooks/stripe-webhook.controller.ts
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+  s_a19009a056668f::t_62e68c6052b165 2-14
+api/src/health/health.module.ts
+  s_a19009a056668f::t_04b1c942b8e09d 2-5
+  s_a19009a056668f::t_dd5f30cb06e63c 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "0641fa12a641e1921fc238f71de0712f14be775d",
+  "prompts": {},
+  "sessions": {
+    "s_84dc9fbb321b7f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e4040-c0a7-72c2-a431-a4ff0997336b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    },
+    "s_a19009a056668f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e3f73-5758-76e2-83b8-c19e061b0752",
+        "model": "gpt-5.5"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
