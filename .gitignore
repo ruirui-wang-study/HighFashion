@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# next
+.next/
+out/
+
+# production
+build/
+
+# logs
+*.log
+.next-dev*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env
+.env
+.env*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# local reference materials
+*.xlsx

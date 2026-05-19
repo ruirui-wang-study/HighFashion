@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Arial Narrow", "Helvetica Neue Condensed", sans-serif;
+  --font-body: "Helvetica Neue", Arial, sans-serif;
+  --background: 60 24% 96%;
+  --foreground: 210 29% 6%;
+  --card: 60 24% 98%;
+  --card-foreground: 210 29% 6%;
+  --popover: 60 24% 98%;
+  --popover-foreground: 210 29% 6%;
+  --primary: 210 29% 6%;
+  --primary-foreground: 60 24% 96%;
+  --secondary: 200 13% 87%;
+  --secondary-foreground: 210 29% 6%;
+  --muted: 200 13% 87%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 80 100% 58%;
+  --accent-foreground: 210 29% 6%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 200 13% 87%;
+  --input: 200 13% 87%;
+  --ring: 80 100% 58%;
+  --radius: 1rem;
+}
+
+* { @apply border-border; }
+html { scroll-behavior: smooth; }
+body {
+  @apply bg-warm text-graphite antialiased;
+  font-family: var(--font-body);
+}
+::selection { @apply bg-lime text-graphite; }
+
+.utility-card {
+  @apply rounded-[1.5rem] border border-graphite/10 bg-white/70 shadow-utility backdrop-blur;
+}
+
+.speed-lines {
+  background-image: linear-gradient(120deg, rgba(183,255,42,.28), transparent 26%), radial-gradient(circle at 75% 15%, rgba(47,128,237,.18), transparent 28%);
+}
