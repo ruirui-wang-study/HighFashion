@@ -4,9 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "npm --prefix api run start:dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "next build",
+    "build:api": "npm --prefix api run build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:api": "npm --prefix api run lint",
+    "test:api": "npm --prefix api test",
+    "db:migrate": "npm --prefix api run prisma:migrate",
+    "db:seed": "npm --prefix api run prisma:seed"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
@@ -30,6 +37,7 @@
     "eslint-config-next": "^16.2.6",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "concurrently": "^9.2.1"
   }
 }

@@ -12,3 +12,11 @@ export function formatPrice(value: number) {
     minimumFractionDigits: 0,
   }).format(value);
 }
+
+export function formatCents(value: number, currency = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: value % 100 === 0 ? 0 : 2,
+  }).format(value / 100);
+}

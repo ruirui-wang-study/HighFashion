@@ -1,16 +1,16 @@
 "use client";
 
 import { SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import { products } from "@/data/products";
-import { filterProducts, sortProducts, type ProductSort } from "@/lib/product-filters";
+import { useEffect, useMemo, useState } from "react";
+import type { Product } from "@/lib/types";
+import { getProducts } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
 
-const categories = Array.from(new Set(products.map((product) => product.category)));
-const useCases = Array.from(new Set(products.flatMap((product) => product.useCases)));
-const sizes = Array.from(new Set(products.flatMap((product) => product.sizes)));
-const colors = Array.from(new Set(products.flatMap((product) => product.colors)));
+const categories = ["Support", "Carry", "Hydration", "Socks", "Sweat", "Recovery"];
+const useCases = ["Run", "Train", "Court", "Recovery"];
+const sizes = ["S", "M", "L", "XL", "S/M", "M/L", "L/XL", "One size", "22 oz"];
+const colors = ["Graphite", "Steel", "Lime", "Signal Blue", "White"];
 
 export function CollectionView({ initialUseCase, initialCategory }: { initialUseCase?: string; initialCategory?: string }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -18,11 +18,29 @@ export function CollectionView({ initialUseCase, initialCategory }: { initialUse
   const [useCase, setUseCase] = useState(initialUseCase ?? "");
   const [size, setSize] = useState("");
   const [color, setColor] = useState("");
-  const [maxPrice, setMaxPrice] = useState(60);
-  const [sort, setSort] = useState<ProductSort>("best");
+  const [maxPrice, setMaxPrice] = useState(6000);
+  const [sort, setSort] = useState("best");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = useMemo(() => sortProducts(filterProducts(products, { category, useCase, size, color, maxPrice }), sort), [category, useCase, size, color, maxPrice, sort]);
-  const filters = <Filters category={category} setCategory={setCategory} useCase={useCase} setUseCase={setUseCase} size={size} setSize={setSize} color={color} setColor={setColor} maxPrice={maxPrice} setMaxPrice={setMaxPrice} />;
+  useEffect(() => {
+    let active = true;
+    getProducts({ category, useCase, size, color, priceMax: maxPrice, sort })
+      .then((result) => {
+        if (active) {
+          setProducts(result);
+          setError(null);
+        }
+      })
+      .catch((err: Error) => {
+        if (active) setError(err.message);
+      })
+    return () => {
+      active = false;
+    };
+  }, [category, useCase, size, color, maxPrice, sort]);
+
+  const filters = useMemo(() => <Filters category={category} setCategory={setCategory} useCase={useCase} setUseCase={setUseCase} size={size} setSize={setSize} color={color} setColor={setColor} maxPrice={maxPrice} setMaxPrice={setMaxPrice} />, [category, useCase, size, color, maxPrice]);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
@@ -30,12 +48,13 @@ export function CollectionView({ initialUseCase, initialCategory }: { initialUse
       <div>
         <div className="mb-6 flex items-center justify-between gap-3">
           <Button variant="outline" className="lg:hidden" onClick={() => setDrawerOpen(true)}><SlidersHorizontal className="h-4 w-4" /> Filters</Button>
-          <p className="text-sm font-bold text-muted">{filtered.length} products</p>
-          <select className="rounded-full border border-graphite/10 bg-white px-4 py-3 text-sm font-bold" value={sort} onChange={(event) => setSort(event.target.value as ProductSort)}>
+          <p className="text-sm font-bold text-muted">{products.length} products</p>
+          <select className="rounded-full border border-graphite/10 bg-white px-4 py-3 text-sm font-bold" value={sort} onChange={(event) => setSort(event.target.value)}>
             <option value="best">Best selling</option><option value="newest">Newest</option><option value="price-asc">Price low to high</option><option value="price-desc">Price high to low</option>
           </select>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        {error ? <div className="rounded-3xl bg-white p-6 font-bold text-muted">{error}</div> : null}
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
       </div>
       {drawerOpen ? (
         <div className="fixed inset-0 z-50 bg-graphite/50 lg:hidden">
@@ -58,7 +77,7 @@ function Filters(props: {
       <FilterGroup title="Use case" values={useCases} value={props.useCase} setValue={props.setUseCase} />
       <FilterGroup title="Size" values={sizes} value={props.size} setValue={props.setSize} />
       <FilterGroup title="Color" values={colors} value={props.color} setValue={props.setColor} />
-      <div className="mt-6 border-t border-graphite/10 pt-5"><p className="text-xs font-bold uppercase tracking-[0.18em]">Price up to ${props.maxPrice}</p><input className="mt-4 w-full accent-lime" type="range" min="20" max="60" value={props.maxPrice} onChange={(event) => props.setMaxPrice(Number(event.target.value))} /></div>
+      <div className="mt-6 border-t border-graphite/10 pt-5"><p className="text-xs font-bold uppercase tracking-[0.18em]">Price up to ${(props.maxPrice / 100).toFixed(0)}</p><input className="mt-4 w-full accent-lime" type="range" min="2000" max="6000" step="100" value={props.maxPrice} onChange={(event) => props.setMaxPrice(Number(event.target.value))} /></div>
     </div>
   );
 }

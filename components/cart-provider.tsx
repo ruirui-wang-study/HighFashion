@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { CartItem, Product } from "@/lib/types";
+import type { CartItem, Product, ProductVariant } from "@/lib/types";
 
-type AddInput = { product: Product; color: string; size: string; quantity?: number };
+type AddInput = { product: Product; variant: ProductVariant; quantity?: number };
 
 type CartContextValue = {
   items: CartItem[];
@@ -11,15 +11,16 @@ type CartContextValue = {
   openCart: () => void;
   closeCart: () => void;
   addItem: (input: AddInput) => void;
-  removeItem: (key: string) => void;
-  updateQuantity: (key: string, quantity: number) => void;
-  subtotal: number;
+  removeItem: (variantId: string) => void;
+  updateQuantity: (variantId: string, quantity: number) => void;
+  clearCart: () => void;
+  subtotalCents: number;
   itemCount: number;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 const storageKey = "pulsegear-cart";
-const itemKey = (item: Pick<CartItem, "productId" | "color" | "size">) => `${item.productId}-${item.color}-${item.size}`;
+const itemKey = (item: Pick<CartItem, "variantId">) => item.variantId;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
@@ -34,7 +35,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const value = useMemo<CartContextValue>(() => {
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotalCents = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return {
@@ -42,31 +43,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       openCart: () => setIsOpen(true),
       closeCart: () => setIsOpen(false),
-      addItem: ({ product, color, size, quantity = 1 }) => {
+      clearCart: () => setItems([]),
+      addItem: ({ product, variant, quantity = 1 }) => {
         setItems((current) => {
-          const key = `${product.id}-${color}-${size}`;
-          const existing = current.find((item) => itemKey(item) === key);
+          const existing = current.find((item) => item.variantId === variant.id);
           if (existing) {
-            return current.map((item) => (itemKey(item) === key ? { ...item, quantity: item.quantity + quantity } : item));
+            return current.map((item) => (item.variantId === variant.id ? { ...item, quantity: item.quantity + quantity } : item));
           }
           return [
             ...current,
-            { productId: product.id, title: product.title, slug: product.slug, price: product.price, color, size, quantity },
+            {
+              variantId: variant.id,
+              productId: product.id,
+              title: product.title,
+              slug: product.slug,
+              unitPriceCents: variant.priceCents,
+              color: variant.color,
+              size: variant.size,
+              quantity,
+            },
           ];
         });
         setIsOpen(true);
       },
-      removeItem: (key) => setItems((current) => current.filter((item) => itemKey(item) !== key)),
-      updateQuantity: (key, quantity) => {
+      removeItem: (variantId) => setItems((current) => current.filter((item) => item.variantId !== variantId)),
+      updateQuantity: (variantId, quantity) => {
         setItems((current) =>
           current.flatMap((item) => {
-            if (itemKey(item) !== key) return [item];
+            if (item.variantId !== variantId) return [item];
             if (quantity <= 0) return [];
             return [{ ...item, quantity }];
           }),
         );
       },
-      subtotal,
+      subtotalCents,
       itemCount,
     };
   }, [items, isOpen]);
@@ -81,4 +91,3 @@ export function useCart() {
 }
 
 export { itemKey };
-

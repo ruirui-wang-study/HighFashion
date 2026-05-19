@@ -1,6 +1,6 @@
-import type { Product, UseCase } from "@/lib/types";
+import type { UseCase } from "@/lib/types";
 
-export const products: Product[] = [
+export const products =  [
   {
     id: "pg-knee-sleeve-001",
     title: "PulseFlex Knee Sleeve",
@@ -169,8 +169,9 @@ export function getProductBySlug(slug: string) {
   return products.find((product) => product.slug === slug);
 }
 
-export function getRelatedProducts(product: Product, limit = 3) {
+export function getRelatedProducts(product: { id: string; useCases: string[] }, limit = 3) {
   return products
     .filter((item) => item.id !== product.id && item.useCases.some((useCase) => product.useCases.includes(useCase)))
     .slice(0, limit);
 }
+

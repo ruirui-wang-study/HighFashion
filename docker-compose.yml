@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulsegear-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pulsegear
+      POSTGRES_PASSWORD: pulsegear
+      POSTGRES_DB: pulsegear
+    ports:
+      - "5432:5432"
+    volumes:
+      - pulsegear_postgres:/var/lib/postgresql/data
+volumes:
+  pulsegear_postgres:
