@@ -56,6 +56,27 @@ export type CartItem = {
   quantity: number;
 };
 
+export type OrderAddress = {
+  line1?: string | null;
+  line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+};
+
+export type OrderShippingDetails = {
+  name?: string | null;
+  address?: OrderAddress | null;
+};
+
+export type OrderBillingDetails = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: OrderAddress | null;
+};
+
 export type Order = {
   id: string;
   orderNo: string;
@@ -68,6 +89,9 @@ export type Order = {
   totalCents: number;
   stripeCheckoutSessionId?: string | null;
   paymentMethodType?: string | null;
+  customerCountry?: string | null;
+  shippingAddress?: OrderShippingDetails | null;
+  billingAddress?: OrderBillingDetails | null;
   items: Array<{
     id: string;
     titleSnapshot: string;

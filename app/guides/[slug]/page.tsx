@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getGuideBySlug, guides } from "@/data/guides";
+import { buildGuideMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 
@@ -13,20 +14,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const guide = getGuideBySlug(slug);
   if (!guide) {
-    return {
-      title: "Guide Not Found | PulseGear",
-    };
+  return {
+    title: "Guide Not Found | PulseGear",
+  };
   }
 
-  return {
-    title: `${guide.title} | PulseGear Guides`,
+  return buildGuideMetadata({
+    title: guide.title,
     description: guide.dek,
-    openGraph: {
-      title: `${guide.title} | PulseGear`,
-      description: guide.dek,
-      type: "article",
-    },
-  };
+    slug: guide.slug,
+  });
 }
 
 export default async function GuideDetailPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -1,5 +1,16 @@
+import type { Metadata } from "next";
 import { CollectionView } from "@/components/collection-view";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
+import { buildPageMetadata } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata({
+    title: "Shop Performance Utility Gear",
+    description: "Browse PulseGear support, carry, hydration, socks, sweat-control, and recovery essentials.",
+    pathname: "/shop",
+    noIndex: true,
+  });
+}
 
 export default async function CollectionPage({ searchParams }: { searchParams: Promise<{ useCase?: string; category?: string }> }) {
   const params = await searchParams;

@@ -52,5 +52,5 @@ export async function createCheckoutSession(input: { items: Array<{ variantId: s
 }
 
 export async function getOrderBySession(sessionId: string) {
-  return apiFetch<Order>(`/api/orders/by-session/${sessionId}`);
+  return apiFetch<Order>(`/api/orders/by-session/${encodeURIComponent(sessionId)}`);
 }

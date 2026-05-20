@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
+import { buildPageMetadata } from "@/lib/seo";
 
 const faqs = [
   { q: "Where do you ship?", a: "This MVP is designed for US and UK DTC markets. Real shipping rates can be connected through Shopify or a carrier service later." },
@@ -7,6 +9,14 @@ const faqs = [
   { q: "Is checkout active?", a: "No. Checkout is disabled in this MVP and shows a payment integration coming soon message." },
   { q: "How do I choose a size?", a: "Use the Fit Guide and product-page measurement modules. Size selection is always a button group, not a dropdown." },
 ];
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata({
+    title: "FAQ, Shipping, and Returns",
+    description: "Review PulseGear shipping, returns, fit, and checkout answers before placing an order.",
+    pathname: "/faq",
+  });
+}
 
 export default function FaqPage() {
   return (

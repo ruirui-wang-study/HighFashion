@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { Ruler, ShieldCheck, Waves } from "lucide-react";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
+import { buildPageMetadata } from "@/lib/seo";
 
 const rows = [
   ["Knee sleeve", "Measure around the kneecap while standing", "Snug compression, no pinching behind knee"],
@@ -7,6 +9,14 @@ const rows = [
   ["Running belt", "Measure natural waist over run shorts", "Secure hold with room to breathe"],
   ["Socks", "Match shoe size range", "Heel sits locked, toe seam stays flat"],
 ];
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata({
+    title: "Fit Guide",
+    description: "Use the PulseGear fit guide to choose support, carry, and sock sizes by measurement and movement.",
+    pathname: "/fit-guide",
+  });
+}
 
 export default function FitGuidePage() {
   return (

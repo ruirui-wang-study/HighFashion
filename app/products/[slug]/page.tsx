@@ -1,12 +1,25 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { PackageCheck, Ruler, ShieldCheck, Star } from "lucide-react";
 import { getProduct, getProducts } from "@/lib/api-client";
+import { buildProductMetadata } from "@/lib/seo";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductVisual, BenefitGrid } from "@/components/product-visual";
 import { ProductPurchasePanel } from "@/components/product-purchase-panel";
 import { ProductCard } from "@/components/product-card";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProduct(slug).catch(() => null);
+  if (!product) {
+    return {
+      title: "Product Not Found | PulseGear",
+    };
+  }
+  return buildProductMetadata({ title: product.title, description: product.shortDescription, slug: product.slug });
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

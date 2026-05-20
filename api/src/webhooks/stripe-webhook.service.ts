@@ -3,6 +3,7 @@ import { Prisma, type Order, type OrderItem } from "@prisma/client";
 import Stripe from "stripe";
 import { PrismaService } from "../common/prisma.service";
 import { StripePaymentProvider } from "../payments/stripe-payment.provider";
+import { getCustomerCountryFromSession, getShippingAddressFromSession } from "./stripe-webhook.mapper";
 
 const handledEvents = new Set([
   "checkout.session.completed",
@@ -12,13 +13,6 @@ const handledEvents = new Set([
 ]);
 
 type OrderWithItems = Order & { items: OrderItem[] };
-type CheckoutSessionWithShipping = Stripe.Checkout.Session & {
-  shipping_details?: {
-    name?: string | null;
-    address?: Stripe.Address | null;
-  } | null;
-};
-
 @Injectable()
 export class StripeWebhookService {
   constructor(
@@ -179,14 +173,11 @@ export class StripeWebhookService {
   }
 
   private getCustomerCountry(session: Stripe.Checkout.Session) {
-    const shippingDetails = (session as CheckoutSessionWithShipping).shipping_details;
-    return shippingDetails?.address?.country ?? session.customer_details?.address?.country ?? null;
+    return getCustomerCountryFromSession(session);
   }
 
   private getShippingAddress(session: Stripe.Checkout.Session) {
-    const shippingDetails = (session as CheckoutSessionWithShipping).shipping_details;
-    if (!shippingDetails) return undefined;
-    return shippingDetails as unknown as Prisma.InputJsonValue;
+    return getShippingAddressFromSession(session);
   }
 
   private getBillingAddress(session: Stripe.Checkout.Session) {

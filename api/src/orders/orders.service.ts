@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../common/prisma.service";
+import { normalizeOrderResponse } from "./order-response";
 
-const orderInclude = { items: true };
+const orderInclude = { items: { orderBy: { id: "asc" as const } } };
 
 @Injectable()
 export class OrdersService {
@@ -10,12 +11,12 @@ export class OrdersService {
   async findBySession(sessionId: string) {
     const order = await this.prisma.order.findUnique({ where: { stripeCheckoutSessionId: sessionId }, include: orderInclude });
     if (!order) throw new NotFoundException({ code: "ORDER_NOT_FOUND", message: "Order not found" });
-    return order;
+    return normalizeOrderResponse(order);
   }
 
   async findByOrderNo(orderNo: string) {
     const order = await this.prisma.order.findUnique({ where: { orderNo }, include: orderInclude });
     if (!order) throw new NotFoundException({ code: "ORDER_NOT_FOUND", message: "Order not found" });
-    return order;
+    return normalizeOrderResponse(order);
   }
 }

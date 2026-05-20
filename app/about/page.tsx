@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductVisual } from "@/components/product-visual";
+import { buildPageMetadata } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata({
+    title: "About PulseGear",
+    description: "Learn how PulseGear designs lightweight support, carry, hydration, and sweat-control essentials for repeat training days.",
+    pathname: "/about",
+  });
+}
 
 export default function AboutPage() {
   return (

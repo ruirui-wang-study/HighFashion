@@ -177,6 +177,22 @@ Errors use:
 { "success": false, "error": { "code": "ERROR_CODE", "message": "Human readable message" } }
 ```
 
+## SEO
+
+The storefront ships with App Router metadata, canonical URLs, and crawler controls for indexable commerce pages.
+
+- `generateMetadata` is defined for public routes so homepage, product pages, collection pages, guides, and utility pages emit page-specific `title`, `description`, and `canonical`.
+- `app/sitemap.ts` publishes `/sitemap.xml` for indexable routes only. It includes the homepage, evergreen static pages, guide detail pages, product detail pages, and collection category pages.
+- `app/robots.ts` publishes `/robots.txt` and disallows `/cart`, `/checkout`, `/api`, and `/admin`.
+- Duplicate or utility routes use canonical consolidation or `noindex`:
+  - `/products/[slug]` is the canonical product URL.
+  - `/product/[slug]` points canonical to `/products/[slug]` and is `noindex`.
+  - `/shop` is the canonical browse URL.
+  - `/collection`, `/cart`, and `/checkout/success` are `noindex`.
+- Unknown product, guide, and collection category routes return `404` through App Router `notFound()`.
+
+Use `FRONTEND_URL` or `NEXT_PUBLIC_SITE_URL` in production so generated canonicals, sitemap entries, and robots host values point at the live storefront domain.
+
 ## Verification
 
 Frontend:

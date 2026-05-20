@@ -2,11 +2,14 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { guides } from "@/data/guides";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
+import { buildGuideMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Training Guides | PulseGear",
-  description: "Practical PulseGear guides for choosing knee support, summer run carry, and court sport essentials.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildGuideMetadata({
+    title: "Training Guides",
+    description: "Practical PulseGear guides for choosing knee support, summer run carry, and court sport essentials.",
+  });
+}
 
 export default function GuidesPage() {
   return (

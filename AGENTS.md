@@ -78,3 +78,123 @@ Avoid exaggerated claims.
 
 Use functional language: support, breathable, no-slip, no-bounce, sweat-ready.
 
+
+
+\# PulseGear SEO Rules
+
+
+
+\## Project Context
+
+PulseGear is a DTC ecommerce storefront for sports support and lightweight training accessories.
+
+
+
+\## SEO Requirements
+
+Every public page must have:
+
+\- unique title
+
+\- meta description
+
+\- canonical URL
+
+\- Open Graph metadata
+
+\- Twitter metadata when applicable
+
+
+
+\## Ecommerce SEO Rules
+
+\- Product pages must use /products/{slug}
+
+\- Collection pages must use /collections/{slug}
+
+\- Do not index cart, checkout, success, account, admin, or API pages
+
+\- Do not allow all filter combinations to be indexed
+
+\- Sort, price, size, and color filter URLs should default to noindex, follow or canonicalize to the base collection
+
+\- Only SEO-approved landing pages should be indexable
+
+
+
+\## Structured Data Rules
+
+Product pages must include:
+
+\- Product JSON-LD
+
+\- Offer or AggregateOffer
+
+\- BreadcrumbList JSON-LD
+
+
+
+Guide pages must include:
+
+\- Article JSON-LD
+
+\- BreadcrumbList JSON-LD
+
+
+
+FAQ pages must include:
+
+\- FAQPage JSON-LD only when the questions and answers are visible on the page
+
+
+
+Never fake reviews, ratings, stock, price, or shipping data.
+
+
+
+\## Content Rules
+
+Use helpful, specific, non-spammy copy.
+
+Avoid keyword stuffing.
+
+Write for real buyers first:
+
+\- runners
+
+\- gym training users
+
+\- court sport players
+
+\- summer outdoor training users
+
+
+
+\## Internal Linking
+
+\- Product pages link to related guides
+
+\- Guide pages link to related products and collections
+
+\- Collection pages link to related guides
+
+\- Footer links to key collections and guides
+
+
+
+\## Validation
+
+Before finishing SEO work:
+
+\- run lint
+
+\- run build
+
+\- verify sitemap
+
+\- verify robots
+
+\- inspect page source for JSON-LD
+
+\- check that unavailable pages return 404
+

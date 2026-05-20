@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Dumbbell, Gauge, ShieldCheck, Waves } from "lucide-react";
+import type { Metadata } from "next";
 import { guides } from "@/data/guides";
 import { getProducts } from "@/lib/api-client";
+import { buildPageMetadata } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductCard } from "@/components/product-card";
@@ -15,6 +17,14 @@ const benefits = [
   { icon: Dumbbell, title: "Sweat-Ready Materials", body: "Quick-dry fabrics and easy-care finishes for repeat training days." },
 ];
 const bundles = ["Summer Run Kit", "Court Support Kit", "Gym Stability Kit"];
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPageMetadata({
+    title: "PulseGear | Lightweight Support and Carry Essentials",
+    description: "Shop lightweight support, no-bounce carry gear, hydration, and recovery essentials for running, training, and court sports.",
+    pathname: "/",
+  });
+}
 
 export default function HomePage() {
   const bestSellersPromise = getProducts({ sort: "best" }).catch(() => []);
