@@ -1,0 +1,81 @@
+api/src/orders/order-response.ts
+  s_84dc9fbb321b7f::t_1276fc6a89e7a8 46-47,65-66,78-115
+  s_84dc9fbb321b7f::t_9b7a1f7614a755 1-45,48-64,67-77,116
+app/about/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,4-12
+api/src/webhooks/stripe-webhook.mapper.ts
+  s_84dc9fbb321b7f::t_0730070ea011dc 1-31
+lib/api-client.ts
+  s_84dc9fbb321b7f::t_b7410d3bc11d7f 55
+api/src/webhooks/stripe-webhook.service.ts
+  s_84dc9fbb321b7f::t_0730070ea011dc 6,176,180
+app/fit-guide/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,4,13-20
+app/guides/[slug]/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 5,17-19,22-23,25-26
+app/cart/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,3,5-12
+  s_84dc9fbb321b7f::t_3b4afb27b85c89 2,15
+app/robots.ts
+  s_84dc9fbb321b7f::t_bac811bef861f5 1-17
+app/collections/[category]/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 2,5,12-22
+README.md
+  s_84dc9fbb321b7f::t_bac811bef861f5 180-195
+lib/types.ts
+  s_84dc9fbb321b7f::t_b7410d3bc11d7f 59-79,92-94
+app/collection/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,4-13
+api/src/webhooks/stripe-webhook.mapper.spec.ts
+  s_84dc9fbb321b7f::t_0730070ea011dc 1-45
+app/checkout/success/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,3,5-11
+  s_84dc9fbb321b7f::t_3b4afb27b85c89 2,15
+api/src/orders/orders.service.ts
+  s_84dc9fbb321b7f::t_9b7a1f7614a755 3,5,14,20
+app/products/[slug]/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 2,5,13-23
+app/cart/cart-page-client.tsx
+  s_84dc9fbb321b7f::t_3b4afb27b85c89 1-60
+app/guides/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 5,7-12
+app/layout.tsx
+  s_84dc9fbb321b7f::t_bac811bef861f5 10
+  s_84dc9fbb321b7f::t_760bd47ffd0ba9 5,9,11
+app/checkout/success/checkout-success-client.tsx
+  s_84dc9fbb321b7f::t_3b4afb27b85c89 1-294
+app/shop/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,4-12
+app/sitemap.ts
+  s_84dc9fbb321b7f::t_bac811bef861f5 1-22,24-45
+  s_84dc9fbb321b7f::t_9aba2afaee5c7a 23
+app/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 3,6,21-28
+lib/seo.ts
+  s_84dc9fbb321b7f::t_760bd47ffd0ba9 1-80
+api/src/orders/order-response.spec.ts
+  s_84dc9fbb321b7f::t_1276fc6a89e7a8 5,58-59
+  s_84dc9fbb321b7f::t_1695daf9feb5d8 91
+  s_84dc9fbb321b7f::t_9919788c1f8d59 1-4,6-35,37-57,60-90,92-112
+  s_84dc9fbb321b7f::t_c301562d3f6fd5 36
+app/faq/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 1,3,13-20
+app/product/[slug]/page.tsx
+  s_84dc9fbb321b7f::t_4293be75ee3577 2,5,13-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "3729c920858f3e6ead3d17a033d2f8293ea78ef6",
+  "prompts": {},
+  "sessions": {
+    "s_84dc9fbb321b7f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e4040-c0a7-72c2-a431-a4ff0997336b",
+        "model": "gpt-5.4"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
