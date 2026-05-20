@@ -19,10 +19,19 @@ type MetadataInput = {
   description?: string;
   pathname: string;
   noIndex?: boolean;
+  noFollow?: boolean;
+  canonicalPathname?: string;
 };
 
-export function buildPageMetadata({ title, description = defaultDescription, pathname, noIndex = false }: MetadataInput): Metadata {
-  const canonical = getCanonicalUrl(pathname);
+export function buildPageMetadata({
+  title,
+  description = defaultDescription,
+  pathname,
+  noIndex = false,
+  noFollow = false,
+  canonicalPathname,
+}: MetadataInput): Metadata {
+  const canonical = getCanonicalUrl(canonicalPathname ?? pathname);
   return {
     title,
     description,
@@ -44,7 +53,7 @@ export function buildPageMetadata({ title, description = defaultDescription, pat
     robots: noIndex
       ? {
           index: false,
-          follow: false,
+          follow: !noFollow,
         }
       : {
           index: true,

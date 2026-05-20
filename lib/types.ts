@@ -36,13 +36,42 @@ export type Product = {
   variants: ProductVariant[];
 };
 
-export type Guide = {
-  slug: string;
+export type GuideSection = {
+  heading: string;
+  body: string;
+};
+
+export type GuideFaqItem = {
+  question: string;
+  answer: string;
+};
+
+export type GuideCollectionLink = {
   title: string;
+  path: string;
+};
+
+export type GuideAuthor = {
+  name: string;
+  role: string;
+};
+
+export type Guide = {
+  title: string;
+  slug: string;
+  metaTitle: string;
+  metaDescription: string;
   dek: string;
+  publishedAt: string;
+  updatedAt: string;
+  author: GuideAuthor;
+  category: string;
   readTime: string;
-  category: "Support" | "Run" | "Court";
-  sections: { heading: string; body: string }[];
+  sections: GuideSection[];
+  faq: GuideFaqItem[];
+  relatedProducts: string[];
+  relatedCollections: GuideCollectionLink[];
+  relatedGuides: string[];
 };
 
 export type CartItem = {

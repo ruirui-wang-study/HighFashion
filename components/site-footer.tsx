@@ -23,7 +23,7 @@ export function SiteFooter() {
         <div>
           <p className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-lime">Support</p>
           <div className="grid gap-3 text-sm text-white/70">
-            <Link href="/fit-guide">Fit Guide</Link><Link href="/guides">Guides</Link><Link href="/faq">Shipping & Returns</Link><Link href="/about">About</Link>
+            <Link href="/fit-guide">Fit Guide</Link><Link href="/guides">Training Guides</Link><Link href="/faq">Shipping & Returns</Link><Link href="/about">About</Link>
           </div>
           <div className="mt-6 flex gap-3 text-white/70"><Instagram /><Twitter /><Youtube /></div>
         </div>

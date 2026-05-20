@@ -2,6 +2,7 @@
 
 import { SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { getProducts } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -12,14 +13,34 @@ const useCases = ["Run", "Train", "Court", "Recovery"];
 const sizes = ["S", "M", "L", "XL", "S/M", "M/L", "L/XL", "One size", "22 oz"];
 const colors = ["Graphite", "Steel", "Lime", "Signal Blue", "White"];
 
-export function CollectionView({ initialUseCase, initialCategory }: { initialUseCase?: string; initialCategory?: string }) {
+export function CollectionView({
+  initialUseCase,
+  initialCategory,
+  initialSize,
+  initialColor,
+  initialPrice,
+  initialSort,
+  lockCategory = false,
+  lockUseCase = false,
+}: {
+  initialUseCase?: string;
+  initialCategory?: string;
+  initialSize?: string;
+  initialColor?: string;
+  initialPrice?: number;
+  initialSort?: string;
+  lockCategory?: boolean;
+  lockUseCase?: boolean;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [category, setCategory] = useState(initialCategory ?? "");
   const [useCase, setUseCase] = useState(initialUseCase ?? "");
-  const [size, setSize] = useState("");
-  const [color, setColor] = useState("");
-  const [maxPrice, setMaxPrice] = useState(6000);
-  const [sort, setSort] = useState("best");
+  const [size, setSize] = useState(initialSize ?? "");
+  const [color, setColor] = useState(initialColor ?? "");
+  const [maxPrice, setMaxPrice] = useState(initialPrice ?? 6000);
+  const [sort, setSort] = useState(initialSort ?? "best");
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +61,38 @@ export function CollectionView({ initialUseCase, initialCategory }: { initialUse
     };
   }, [category, useCase, size, color, maxPrice, sort]);
 
-  const filters = useMemo(() => <Filters category={category} setCategory={setCategory} useCase={useCase} setUseCase={setUseCase} size={size} setSize={setSize} color={color} setColor={setColor} maxPrice={maxPrice} setMaxPrice={setMaxPrice} />, [category, useCase, size, color, maxPrice]);
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (!lockCategory && category) params.set("category", category);
+    if (!lockUseCase && useCase) params.set("useCase", useCase);
+    if (size) params.set("size", size);
+    if (color) params.set("color", color);
+    if (maxPrice < 6000) params.set("price", String(maxPrice));
+    if (sort !== "best") params.set("sort", sort);
+
+    const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [category, color, lockCategory, lockUseCase, maxPrice, pathname, router, size, sort, useCase]);
+
+  const filters = useMemo(
+    () => (
+      <Filters
+        category={category}
+        setCategory={setCategory}
+        useCase={useCase}
+        setUseCase={setUseCase}
+        size={size}
+        setSize={setSize}
+        color={color}
+        setColor={setColor}
+        maxPrice={maxPrice}
+        setMaxPrice={setMaxPrice}
+        lockCategory={lockCategory}
+        lockUseCase={lockUseCase}
+      />
+    ),
+    [category, useCase, size, color, maxPrice, lockCategory, lockUseCase],
+  );
 
   return (
     <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
@@ -70,11 +122,13 @@ export function CollectionView({ initialUseCase, initialCategory }: { initialUse
 
 function Filters(props: {
   category: string; setCategory: (value: string) => void; useCase: string; setUseCase: (value: string) => void; size: string; setSize: (value: string) => void; color: string; setColor: (value: string) => void; maxPrice: number; setMaxPrice: (value: number) => void;
+  lockCategory: boolean;
+  lockUseCase: boolean;
 }) {
   return (
     <div className="rounded-[1.75rem] border border-graphite/10 bg-white p-5">
-      <FilterGroup title="Category" values={categories} value={props.category} setValue={props.setCategory} />
-      <FilterGroup title="Use case" values={useCases} value={props.useCase} setValue={props.setUseCase} />
+      {!props.lockCategory ? <FilterGroup title="Category" values={categories} value={props.category} setValue={props.setCategory} /> : null}
+      {!props.lockUseCase ? <FilterGroup title="Use case" values={useCases} value={props.useCase} setValue={props.setUseCase} /> : null}
       <FilterGroup title="Size" values={sizes} value={props.size} setValue={props.setSize} />
       <FilterGroup title="Color" values={colors} value={props.color} setValue={props.setColor} />
       <div className="mt-6 border-t border-graphite/10 pt-5"><p className="text-xs font-bold uppercase tracking-[0.18em]">Price up to ${(props.maxPrice / 100).toFixed(0)}</p><input className="mt-4 w-full accent-lime" type="range" min="2000" max="6000" step="100" value={props.maxPrice} onChange={(event) => props.setMaxPrice(Number(event.target.value))} /></div>

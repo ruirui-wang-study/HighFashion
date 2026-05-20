@@ -1,25 +1,153 @@
 # PulseGear Storefront + API
 
-PulseGear is a mobile-first DTC storefront for lightweight support and carry essentials. The project now includes a Next.js storefront plus a NestJS API with PostgreSQL, Prisma, and Stripe Checkout.
+PulseGear is a mobile-first DTC ecommerce project for lightweight support, carry, hydration, sweat-control, and recovery gear. The repo contains a Next.js storefront and a NestJS API backed by PostgreSQL, Prisma, and Stripe Checkout.
 
-## Apps
+## Architecture
 
 ```text
-app/                    Next.js App Router storefront
-components/             Reusable storefront UI
-lib/api-client.ts       Frontend API client
-api/                    NestJS API service
-api/prisma/schema.prisma Prisma data model
-api/prisma/seed.ts      Product seed data
+app/                         Next.js App Router pages and metadata routes
+components/                  Reusable storefront UI, cart state, SEO helpers
+data/                        Local content and SEO seed data
+lib/                         Shared frontend utilities, types, SEO builders
+api/                         NestJS API service
+api/prisma/                  Prisma schema, migrations, seed script
 ```
+
+### Frontend
+
+- Framework: Next.js App Router + TypeScript + Tailwind CSS
+- Main commerce routes:
+  - `/`
+  - `/shop`
+  - `/products/[slug]`
+  - `/collections/[...segments]`
+  - `/cart`
+  - `/checkout/success`
+  - `/guides`
+  - `/guides/[slug]`
+  - `/faq`
+  - `/fit-guide`
+  - `/about`
+- Shared client state:
+  - cart state in `components/cart-provider.tsx`
+  - API access through `lib/api-client.ts`
+- SEO surface:
+  - `app/sitemap.ts`
+  - `app/robots.ts`
+  - `lib/seo.ts`
+  - `lib/structured-data.ts`
+
+### Backend
+
+- Framework: NestJS
+- Database: PostgreSQL
+- ORM: Prisma
+- Payments: Stripe Checkout + webhook fulfillment
+- API modules:
+  - `health`
+  - `products`
+  - `collections`
+  - `checkout`
+  - `orders`
+  - `payments`
+  - `webhooks`
+
+## Current Features
+
+### Commerce
+
+- Product listing and product detail pages
+- Variant-aware cart using `variantId`
+- Stripe Checkout session creation from API
+- Order creation before redirect to Stripe
+- Success page polling order state by Stripe session ID
+- Webhook-driven order updates:
+  - `PENDING`
+  - `PAID`
+  - `PAYMENT_FAILED`
+  - `EXPIRED`
+- Inventory deduction on successful payment
+- Order lookup by order number and by checkout session ID
+
+### Content and Guides
+
+- Guides index page at `/guides`
+- Guide detail pages at `/guides/[slug]`
+- Local guide content system in `data/guides.ts`
+- Each guide includes:
+  - title
+  - slug
+  - metaTitle
+  - metaDescription
+  - publishedAt
+  - updatedAt
+  - author
+  - category
+  - FAQ
+  - relatedProducts
+  - relatedCollections
+  - relatedGuides
+- Guide pages render:
+  - metadata
+  - Article JSON-LD
+  - table of contents
+  - FAQ block
+  - related products
+  - related guides
+  - related collection links
+
+### Collection SEO System
+
+- Canonical collection route handled through `app/collections/[...segments]/page.tsx`
+- Indexable base category pages:
+  - `/collections/support`
+  - `/collections/carry`
+  - `/collections/hydration`
+  - `/collections/socks`
+  - `/collections/sweat`
+  - `/collections/recovery`
+- Indexable SEO landing page whitelist:
+  - `/collections/running/knee-support`
+  - `/collections/running/hydration-belts`
+  - `/collections/court/pickleball-accessories`
+  - `/collections/training/compression-gear`
+- Query-parameter filter pages with `sort`, `price`, `size`, or `color` default to `noindex, follow`
+- Filtered collection pages canonicalize back to the base category page or the whitelisted landing page
+- Base and whitelist pages include:
+  - unique intro content
+  - related guides
+  - related products
+
+## Data Model Summary
+
+### Storefront seed content
+
+- `data/products.ts`
+  - local product catalog used for sitemap and static content relationships
+- `data/guides.ts`
+  - local guide content system
+- `data/collection-pages.ts`
+  - category SEO configuration and landing page whitelist
+- `data/faq.ts`
+  - FAQ page content and FAQPage schema source
+
+### Prisma domain model
+
+Key database entities in `api/prisma/schema.prisma`:
+
+- `Product`
+- `ProductVariant`
+- `ProductImage`
+- `Collection`
+- `ProductCollection`
+- `Order`
+- `OrderItem`
+- `PaymentEvent`
+- `InventoryMovement`
 
 ## Environment
 
-Copy `.env.example` to `.env` at the repository root and fill Stripe values:
-
-```bash
-cp .env.example .env
-```
+Copy `.env.example` to `.env` at the repository root and fill the required values.
 
 Required values:
 
@@ -37,11 +165,17 @@ ENABLE_BNPL=true
 PORT=4000
 ```
 
-Never expose `STRIPE_SECRET_KEY` to the frontend. The frontend only uses `NEXT_PUBLIC_API_BASE_URL`.
+Notes:
+
+- Keep `STRIPE_SECRET_KEY` server-only.
+- The frontend should only use `NEXT_PUBLIC_API_BASE_URL`.
+- In production, set `FRONTEND_URL` or `NEXT_PUBLIC_SITE_URL` to the live domain so canonical URLs, sitemap entries, and robots host values are correct.
 
 ## Local Database
 
-Start PostgreSQL:
+You can use either local PostgreSQL or Docker PostgreSQL, as long as `DATABASE_URL` points to a working database.
+
+Docker option:
 
 ```bash
 docker compose up -d postgres
@@ -50,11 +184,12 @@ docker compose up -d postgres
 Run migration and seed:
 
 ```bash
+npm --prefix api run prisma:generate
 npm --prefix api run prisma:migrate
 npm --prefix api run prisma:seed
 ```
 
-If the migration already exists and you only need to apply it in a clean database, run:
+If the migration already exists and you only need to apply it in a clean database:
 
 ```bash
 npx --prefix api prisma migrate deploy
@@ -69,12 +204,6 @@ npm install
 npm --prefix api install
 ```
 
-Generate Prisma client:
-
-```bash
-npm --prefix api run prisma:generate
-```
-
 Run API:
 
 ```bash
@@ -87,14 +216,16 @@ Run frontend:
 npm run dev
 ```
 
-Or run both:
+Run both:
 
 ```bash
 npm run dev:all
 ```
 
-Frontend: `http://localhost:3000`
-API: `http://localhost:4000/api/health`
+Local URLs:
+
+- Frontend: `http://localhost:3000`
+- API health: `http://localhost:4000/api/health`
 
 ## Stripe Checkout
 
@@ -102,31 +233,13 @@ Checkout flow:
 
 1. Frontend cart stores `variantId` and `quantity`.
 2. Frontend calls `POST /api/checkout/session`.
-3. API re-queries variant price, stock, product status, and calculates shipping.
+3. API re-queries variant price, stock, product status, and shipping inputs.
 4. API creates a `PENDING` order.
 5. API creates a Stripe Checkout Session and returns `checkoutUrl`.
-6. Stripe redirects to `/checkout/success?session_id=...`.
-7. Stripe webhook updates the order to `PAID`, `PAYMENT_FAILED`, or `EXPIRED`.
-8. Success page polls `GET /api/orders/by-session/:sessionId` while payment is pending.
-
-### Local Webhook Testing
-
-Install Stripe CLI, then run:
-
-```bash
-stripe login
-stripe listen --forward-to localhost:4000/api/webhooks/stripe
-```
-
-Copy the `whsec_...` value into `.env` as `STRIPE_WEBHOOK_SECRET` and restart the API.
-
-Test payment with Stripe test card:
-
-```text
-4242 4242 4242 4242
-Any future expiry
-Any CVC
-```
+6. Stripe redirects back to `/checkout/success?session_id=...`.
+7. Frontend success page polls `GET /api/orders/by-session/:sessionId`.
+8. Stripe webhook updates the order to `PAID`, `PAYMENT_FAILED`, or `EXPIRED`.
+9. On success, the frontend clears cart state.
 
 Webhook events handled:
 
@@ -135,21 +248,32 @@ Webhook events handled:
 - `checkout.session.async_payment_failed`
 - `checkout.session.expired`
 
-Webhook signatures are verified with `STRIPE_WEBHOOK_SECRET`. Processed Stripe event IDs are stored in `PaymentEvent` to prevent duplicate processing and duplicate stock deductions.
+Webhook behavior:
 
-## Payment Methods
+- verifies Stripe signatures
+- stores processed event IDs in `PaymentEvent`
+- prevents duplicate order updates
+- prevents duplicate stock deductions
+- maps Stripe billing and shipping details into the order record
 
-The API uses Stripe Checkout with `automatic_payment_methods.enabled = true` by default. Stripe decides which methods to show based on buyer country, currency, device, browser, and Stripe Dashboard settings.
+### Local webhook testing
 
-Expected behavior:
+Install Stripe CLI, then run:
 
-- Cards are shown when enabled.
-- Apple Pay / Google Pay wallets appear automatically on supported devices and domains.
-- Link appears when available and enabled.
-- Klarna / Afterpay / Clearpay appear when the account, buyer country, currency, and order amount are eligible.
-- PayPal can appear through Stripe Checkout only if the Stripe account country and currency support it. The code keeps a payment provider abstraction so PayPal can later be enabled through Stripe or another provider without hardcoding checkout business logic.
+```bash
+stripe login
+stripe listen --forward-to localhost:4000/api/webhooks/stripe
+```
 
-Configure payment methods in Stripe Dashboard under Payment methods. Keep `ENABLE_STRIPE_AUTOMATIC_PAYMENT_METHODS=true` for the MVP.
+Copy the emitted `whsec_...` into `.env` as `STRIPE_WEBHOOK_SECRET`, then restart the API.
+
+Stripe test card:
+
+```text
+4242 4242 4242 4242
+Any future expiry
+Any CVC
+```
 
 ## API Endpoints
 
@@ -165,13 +289,13 @@ GET  /api/orders/:orderNo
 POST /api/webhooks/stripe
 ```
 
-All API responses use:
+Response format:
 
 ```json
 { "success": true, "data": {} }
 ```
 
-Errors use:
+Error format:
 
 ```json
 { "success": false, "error": { "code": "ERROR_CODE", "message": "Human readable message" } }
@@ -179,19 +303,50 @@ Errors use:
 
 ## SEO
 
-The storefront ships with App Router metadata, canonical URLs, and crawler controls for indexable commerce pages.
+The project now has a technical SEO layer across commerce pages and guide content.
 
-- `generateMetadata` is defined for public routes so homepage, product pages, collection pages, guides, and utility pages emit page-specific `title`, `description`, and `canonical`.
-- `app/sitemap.ts` publishes `/sitemap.xml` for indexable routes only. It includes the homepage, evergreen static pages, guide detail pages, product detail pages, and collection category pages.
-- `app/robots.ts` publishes `/robots.txt` and disallows `/cart`, `/checkout`, `/api`, and `/admin`.
-- Duplicate or utility routes use canonical consolidation or `noindex`:
-  - `/products/[slug]` is the canonical product URL.
-  - `/product/[slug]` points canonical to `/products/[slug]` and is `noindex`.
-  - `/shop` is the canonical browse URL.
-  - `/collection`, `/cart`, and `/checkout/success` are `noindex`.
-- Unknown product, guide, and collection category routes return `404` through App Router `notFound()`.
+- Public pages use `generateMetadata` for route-specific title, description, and canonical.
+- `app/sitemap.ts` publishes `/sitemap.xml`.
+- `app/robots.ts` publishes `/robots.txt`.
+- JSON-LD is implemented for:
+  - product pages
+  - collection breadcrumbs
+  - FAQ page
+  - guide article pages
+- Duplicate and utility routes are consolidated or excluded:
+  - `/products/[slug]` is canonical
+  - `/product/[slug]` is `noindex` and canonicalizes to `/products/[slug]`
+  - `/collection` is `noindex`
+  - `/cart` is `noindex`
+  - `/checkout/success` is `noindex`
+- Unknown product, guide, and collection paths return `404` with App Router `notFound()`.
 
-Use `FRONTEND_URL` or `NEXT_PUBLIC_SITE_URL` in production so generated canonicals, sitemap entries, and robots host values point at the live storefront domain.
+### Sitemap policy
+
+- Includes:
+  - homepage
+  - evergreen static pages
+  - canonical product pages
+  - base collection pages
+  - whitelisted collection landing pages
+  - guide detail pages
+- Excludes:
+  - cart
+  - checkout
+  - API routes
+  - admin
+  - filter combinations
+  - sort/price/size/color parameter pages
+
+### Real content timestamps
+
+Sitemap `lastModified` now comes from content data instead of build time:
+
+- guides use `publishedAt` / `updatedAt`
+- products use local `updatedAt`
+- collection pages use local `updatedAt`
+
+This avoids the common problem where every deploy looks like a fresh update to search engines.
 
 ## Verification
 
@@ -210,13 +365,22 @@ npm --prefix api test
 npm --prefix api run build
 ```
 
+## Current Gaps
+
+- No CMS yet; guides and collection SEO content are local seed data
+- No authenticated admin UI
+- No live review system
+- No live tax engine
+- No country-specific shipping matrix yet
+- No production observability stack yet
+
 ## Production TODO
 
-- Configure production PostgreSQL and managed backups.
-- Configure Stripe live keys and webhook endpoint.
-- Verify wallet domain registration for Apple Pay.
-- Review BNPL and PayPal eligibility per target market.
-- Add authenticated admin workflows for product, inventory, and fulfillment.
-- Add tax calculation and country-specific shipping tables.
-- Add rate limiting, structured logging, and API monitoring.
-- Add more integration tests around checkout and webhook idempotency.
+- Configure production PostgreSQL and backups
+- Configure Stripe live keys and webhook endpoint
+- Verify wallet domain registration for Apple Pay
+- Review BNPL and PayPal eligibility by market
+- Add admin workflows for product, inventory, and fulfillment
+- Add tax calculation and country-specific shipping rules
+- Add rate limiting, structured logging, and monitoring
+- Add broader integration coverage around checkout and webhooks
