@@ -1,0 +1,33 @@
+lib/product-image-map.ts
+  s_84dc9fbb321b7f::t_9b0c36a4e7edb4 1-45
+app/product/[slug]/page.tsx
+  s_84dc9fbb321b7f::t_9b0c36a4e7edb4 39-41
+next.config.ts
+  s_84dc9fbb321b7f::t_dd873b3b72934d 3-12
+components/product-visual.tsx
+  s_84dc9fbb321b7f::t_9b0c36a4e7edb4 3,8-13,15-19
+  s_84dc9fbb321b7f::t_dd873b3b72934d 2,14
+app/products/[slug]/page.tsx
+  s_84dc9fbb321b7f::t_9b0c36a4e7edb4 42-44
+components/product-card.tsx
+  s_84dc9fbb321b7f::t_9b0c36a4e7edb4 26
+components/cart-provider.tsx
+  s_84dc9fbb321b7f::t_d5ec21e4ffabbb 26,28-31,39,44,47,49
+  s_84dc9fbb321b7f::t_8aacdce5e053f2 32-38,40-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "31a11d6672fe57b47863d92749325fa8ad8d3eca",
+  "prompts": {},
+  "sessions": {
+    "s_84dc9fbb321b7f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e4040-c0a7-72c2-a431-a4ff0997336b",
+        "model": "gpt-5.4"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
