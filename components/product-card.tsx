@@ -23,7 +23,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group overflow-hidden rounded-[1.75rem] border border-graphite/10 bg-white p-3 transition hover:-translate-y-1 hover:shadow-utility">
       <Link href={`/products/${product.slug}`}>
-        <ProductVisual label={product.title} className="min-h-64" />
+        <ProductVisual label={product.title} image={product.images[0]} className="min-h-64" />
       </Link>
       <div className="p-3">
         <div className="mb-3 flex items-center justify-between gap-2">

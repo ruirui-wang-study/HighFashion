@@ -39,9 +39,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Section>
         <Container className="grid gap-8 lg:grid-cols-[1.08fr_.92fr]">
           <div className="grid gap-4 sm:grid-cols-2">
-            <ProductVisual label={product.images[0] ?? product.title} className="sm:col-span-2 sm:min-h-[560px]" />
-            <ProductVisual label={product.images[1] ?? product.title} className="min-h-72" />
-            <ProductVisual label={product.images[2] ?? product.title} className="min-h-72" />
+            <ProductVisual label={`${product.title} primary image`} image={product.images[0]} className="sm:col-span-2 sm:min-h-[560px]" />
+            <ProductVisual label={`${product.title} detail image`} image={product.images[1]} className="min-h-72" />
+            <ProductVisual label={`${product.title} alternate image`} image={product.images[2]} className="min-h-72" />
           </div>
           <ProductPurchasePanel product={product} />
         </Container>

@@ -23,16 +23,30 @@ const storageKey = "pulsegear-cart";
 const itemKey = (item: Pick<CartItem, "variantId">) => item.variantId;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    const stored = window.localStorage.getItem(storageKey);
-    return stored ? (JSON.parse(stored) as CartItem[]) : [];
-  });
+  const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasLoadedCart, setHasLoadedCart] = useState(false);
 
   useEffect(() => {
+    const stored = window.localStorage.getItem(storageKey);
+    const timeoutId = window.setTimeout(() => {
+      if (stored) {
+        try {
+          setItems(JSON.parse(stored) as CartItem[]);
+        } catch {
+          window.localStorage.removeItem(storageKey);
+        }
+      }
+      setHasLoadedCart(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedCart) return;
     window.localStorage.setItem(storageKey, JSON.stringify(items));
-  }, [items]);
+  }, [hasLoadedCart, items]);
 
   const value = useMemo<CartContextValue>(() => {
     const subtotalCents = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);

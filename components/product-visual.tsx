@@ -1,9 +1,22 @@
 import { Activity, Droplets, ShieldCheck, Truck } from "lucide-react";
+import Image from "next/image";
+import { resolveProductImage } from "@/lib/product-image-map";
 import { cn } from "@/lib/utils";
 
 const iconMap = [Activity, ShieldCheck, Truck, Droplets];
 
-export function ProductVisual({ label, className }: { label: string; className?: string }) {
+export function ProductVisual({ label, image, className }: { label: string; image?: string; className?: string }) {
+  const src = resolveProductImage(image);
+
+  if (src) {
+    return (
+      <div className={cn("relative min-h-72 overflow-hidden rounded-[1.75rem] bg-cool", className)}>
+        <Image src={src} alt={label} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-graphite/30 via-transparent to-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative min-h-72 overflow-hidden rounded-[1.75rem] bg-graphite p-5 text-white speed-lines", className)}>
       <div className="absolute inset-0 bg-grid bg-[size:26px_26px] opacity-20" />
