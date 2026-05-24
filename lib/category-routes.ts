@@ -1,4 +1,4 @@
-import type { ProductCategory } from "@/lib/types";
+import type { ProductCategory } from "./types";
 
 export const categorySlugs: Record<ProductCategory, string> = {
   Support: "support",

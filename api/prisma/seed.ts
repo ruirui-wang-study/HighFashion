@@ -1,4 +1,7 @@
-import { PrismaClient, ProductStatus } from "@prisma/client";
+import { AdminRoleName, ContentStatus, ContentType, PrismaClient, ProductStatus } from "@prisma/client";
+import { hashAdminPassword } from "../src/admin-auth/admin-auth.service";
+import { guides } from "../../data/guides";
+import { faqs } from "../../data/faq";
 
 const prisma = new PrismaClient();
 
@@ -195,6 +198,15 @@ const collections = [
   { title: "Recovery", slug: "recovery", description: "Compression essentials for recovery routines." },
 ];
 
+const adminRoles = [
+  { name: AdminRoleName.SUPER_ADMIN, label: "Super Admin" },
+  { name: AdminRoleName.ADMIN, label: "Admin" },
+  { name: AdminRoleName.OPERATOR, label: "Operator" },
+  { name: AdminRoleName.CONTENT_EDITOR, label: "Content Editor" },
+  { name: AdminRoleName.ANALYST, label: "Analyst" },
+  { name: AdminRoleName.VIEWER, label: "Viewer" },
+];
+
 function skuFor(slug: string, color: string, size: string) {
   const productCode = slug.split("-").map((part) => part[0]).join("").toUpperCase();
   const colorCode = color.replace(/[^a-zA-Z0-9]/g, "").slice(0, 3).toUpperCase();
@@ -205,6 +217,8 @@ function skuFor(slug: string, color: string, size: string) {
 async function main() {
   await prisma.paymentEvent.deleteMany();
   await prisma.inventoryMovement.deleteMany();
+  await prisma.orderStatusEvent.deleteMany();
+  await prisma.orderNote.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.productCollection.deleteMany();
@@ -212,6 +226,14 @@ async function main() {
   await prisma.productImage.deleteMany();
   await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
+
+  for (const role of adminRoles) {
+    await prisma.adminRole.upsert({
+      where: { name: role.name },
+      update: { label: role.label },
+      create: role,
+    });
+  }
 
   const collectionBySlug = new Map<string, string>();
   for (const [index, collection] of collections.entries()) {
@@ -247,6 +269,8 @@ async function main() {
               priceCents: product.priceCents,
               compareAtPriceCents: product.compareAtPriceCents,
               stock: product.stockBase + colorIndex * 2 + sizeIndex,
+              lowStockThreshold: 5,
+              weightGrams: product.category === "Hydration" ? 380 : product.category === "Carry" ? 160 : 220,
               active: true,
             })),
           ),
@@ -259,6 +283,81 @@ async function main() {
       await prisma.productCollection.create({ data: { productId: created.id, collectionId, sortOrder: productIndex } });
     }
   }
+
+  const superAdminRole = await prisma.adminRole.findUniqueOrThrow({ where: { name: AdminRoleName.SUPER_ADMIN } });
+  await prisma.adminUser.upsert({
+    where: { email: "admin@pulsegear.local" },
+    update: {
+      name: "PulseGear Super Admin",
+      roleId: superAdminRole.id,
+      active: true,
+    },
+    create: {
+      email: "admin@pulsegear.local",
+      name: "PulseGear Super Admin",
+      passwordHash: hashAdminPassword("Admin1234!"),
+      roleId: superAdminRole.id,
+      active: true,
+    },
+  });
+
+  const guideCount = await prisma.contentEntry.count({ where: { type: ContentType.GUIDE } });
+  if (guideCount === 0) {
+    for (const guide of guides) {
+      await prisma.contentEntry.create({
+        data: {
+          type: ContentType.GUIDE,
+          title: guide.title,
+          slug: guide.slug,
+          status: ContentStatus.PUBLISHED,
+          seoTitle: guide.metaTitle,
+          seoDescription: guide.metaDescription,
+          publishedAt: new Date(guide.publishedAt),
+          guideContent: {
+            create: {
+              dek: guide.dek,
+              category: guide.category,
+              authorName: guide.author.name,
+              authorRole: guide.author.role,
+              readTime: guide.readTime,
+              sections: guide.sections,
+              faq: guide.faq,
+              relatedProducts: guide.relatedProducts,
+              relatedCollections: guide.relatedCollections,
+              relatedGuides: guide.relatedGuides,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  await prisma.contentEntry.upsert({
+    where: { type_slug: { type: ContentType.FAQ, slug: "faq" } },
+    update: {
+      title: "FAQ",
+      status: ContentStatus.PUBLISHED,
+      seoTitle: "FAQ | PulseGear",
+      seoDescription: "Frequently asked questions about PulseGear orders, shipping, and fit.",
+      publishedAt: new Date(),
+      faqContent: {
+        upsert: {
+          update: { items: faqs },
+          create: { items: faqs },
+        },
+      },
+    },
+    create: {
+      type: ContentType.FAQ,
+      title: "FAQ",
+      slug: "faq",
+      status: ContentStatus.PUBLISHED,
+      seoTitle: "FAQ | PulseGear",
+      seoDescription: "Frequently asked questions about PulseGear orders, shipping, and fit.",
+      publishedAt: new Date(),
+      faqContent: { create: { items: faqs } },
+    },
+  });
 }
 
 main()

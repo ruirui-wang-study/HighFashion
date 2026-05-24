@@ -22,7 +22,7 @@ export class StripePaymentProvider implements PaymentProvider {
       customer_email: input.email,
       billing_address_collection: "auto",
       shipping_address_collection: {
-        allowed_countries: ["US", "GB"],
+        allowed_countries: input.shippingCountries as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[],
       },
       shipping_options: [
         {

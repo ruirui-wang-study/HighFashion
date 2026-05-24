@@ -8,6 +8,7 @@ export type CreateCheckoutSessionInput = {
   orderNo: string;
   email?: string;
   currency: string;
+  shippingCountries: string[];
   shippingAmount: number;
   lineItems: Array<{
     name: string;

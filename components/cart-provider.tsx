@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { getProducts } from "@/lib/api-client";
+import { reconcileCartItems } from "@/lib/cart-reconciliation";
 import type { CartItem, Product, ProductVariant } from "@/lib/types";
 
 type AddInput = { product: Product; variant: ProductVariant; quantity?: number };
@@ -14,6 +16,8 @@ type CartContextValue = {
   removeItem: (variantId: string) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
+  syncMessage: string | null;
+  dismissSyncMessage: () => void;
   subtotalCents: number;
   itemCount: number;
 };
@@ -26,6 +30,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [hasLoadedCart, setHasLoadedCart] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey);
@@ -48,6 +53,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(storageKey, JSON.stringify(items));
   }, [hasLoadedCart, items]);
 
+  useEffect(() => {
+    if (!hasLoadedCart || items.length === 0) return;
+
+    let active = true;
+
+    getProducts()
+      .then((products) => {
+        if (!active) return;
+        const result = reconcileCartItems(items, products);
+        if (result.removedCount === 0 && result.updatedCount === 0) return;
+
+        setItems(result.items);
+
+        const changes = [];
+        if (result.removedCount > 0) changes.push(`${result.removedCount} unavailable item${result.removedCount > 1 ? "s were" : " was"} removed`);
+        if (result.updatedCount > 0) changes.push(`${result.updatedCount} item${result.updatedCount > 1 ? "s were" : " was"} refreshed`);
+        setSyncMessage(`Cart updated: ${changes.join(", ")}.`);
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hasLoadedCart, items]);
+
   const value = useMemo<CartContextValue>(() => {
     const subtotalCents = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -58,6 +90,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       openCart: () => setIsOpen(true),
       closeCart: () => setIsOpen(false),
       clearCart: () => setItems([]),
+      syncMessage,
+      dismissSyncMessage: () => setSyncMessage(null),
       addItem: ({ product, variant, quantity = 1 }) => {
         setItems((current) => {
           const existing = current.find((item) => item.variantId === variant.id);
@@ -93,7 +127,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       subtotalCents,
       itemCount,
     };
-  }, [items, isOpen]);
+  }, [items, isOpen, syncMessage]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

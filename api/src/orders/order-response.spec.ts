@@ -7,6 +7,10 @@ describe("normalizeOrderResponse", () => {
       orderNo: "PG123",
       email: "runner@example.com",
       status: "PAID",
+      createdAt: new Date("2026-05-22T00:00:00.000Z"),
+      paymentStatus: "PAID",
+      fulfillmentStatus: "UNFULFILLED",
+      fulfilledAt: null,
       currency: "usd",
       subtotalCents: 3400,
       shippingCents: 699,
@@ -63,12 +67,17 @@ describe("normalizeOrderResponse", () => {
       orderNo: "PG123",
       email: "runner@example.com",
       status: "PAID",
+      createdAt: "2026-05-22T00:00:00.000Z",
+      paymentStatus: "PAID",
+      fulfillmentStatus: "UNFULFILLED",
+      fulfilledAt: null,
       currency: "usd",
       subtotalCents: 3400,
       shippingCents: 699,
       discountCents: 0,
       totalCents: 4099,
       stripeCheckoutSessionId: "cs_test_123",
+      stripePaymentIntentId: "pi_123",
       paymentMethodType: "card",
       customerCountry: "US",
       shippingAddress: {
@@ -107,6 +116,8 @@ describe("normalizeOrderResponse", () => {
           lineTotalCents: 3400,
         },
       ],
+      notes: [],
+      statusEvents: [],
     });
   });
 });

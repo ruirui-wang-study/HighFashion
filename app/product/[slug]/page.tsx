@@ -19,9 +19,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
   return buildPageMetadata({
-    title: `${product.title} | PulseGear`,
-    description: product.shortDescription,
+    title: product.seoTitle?.trim() || `${product.title} | PulseGear`,
+    description: product.seoDescription?.trim() || product.shortDescription,
     pathname: `/products/${product.slug}`,
+    canonicalUrl: product.canonicalUrl ?? undefined,
+    ogImageUrl: product.ogImageUrl ?? undefined,
     noIndex: true,
   });
 }

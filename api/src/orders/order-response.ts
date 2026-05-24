@@ -35,12 +35,17 @@ type OrderLike = {
   orderNo: string;
   email?: string | null;
   status: string;
+  createdAt?: Date;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+  fulfilledAt?: Date | null;
   currency: string;
   subtotalCents: number;
   shippingCents: number;
   discountCents: number;
   totalCents: number;
   stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
   paymentMethodType?: string | null;
   customerCountry?: string | null;
   shippingAddress?: unknown;
@@ -54,12 +59,17 @@ export function normalizeOrderResponse(order: OrderLike) {
     orderNo: order.orderNo,
     email: order.email ?? null,
     status: order.status,
+    createdAt: order.createdAt?.toISOString() ?? null,
+    paymentStatus: order.paymentStatus,
+    fulfillmentStatus: order.fulfillmentStatus,
+    fulfilledAt: order.fulfilledAt?.toISOString() ?? null,
     currency: order.currency,
     subtotalCents: order.subtotalCents,
     shippingCents: order.shippingCents,
     discountCents: order.discountCents,
     totalCents: order.totalCents,
     stripeCheckoutSessionId: order.stripeCheckoutSessionId ?? null,
+    stripePaymentIntentId: order.stripePaymentIntentId ?? null,
     paymentMethodType: order.paymentMethodType ?? null,
     customerCountry: order.customerCountry ?? null,
     shippingAddress: normalizeShippingAddress(order.shippingAddress),
@@ -74,6 +84,38 @@ export function normalizeOrderResponse(order: OrderLike) {
       unitPriceCents: item.unitPriceCents,
       lineTotalCents: item.lineTotalCents,
     })),
+    notes: "notes" in order && Array.isArray((order as Record<string, unknown>).notes)
+      ? ((order as Record<string, unknown>).notes as Array<{
+          id: string;
+          note: string;
+          createdAt: Date;
+          createdByAdmin?: { id: string; name: string; email: string } | null;
+        }>).map((note) => ({
+          id: note.id,
+          note: note.note,
+          createdAt: note.createdAt.toISOString(),
+          createdByAdmin: note.createdByAdmin ?? null,
+        }))
+      : [],
+    statusEvents: "statusEvents" in order && Array.isArray((order as Record<string, unknown>).statusEvents)
+      ? ((order as Record<string, unknown>).statusEvents as Array<{
+          id: string;
+          type: string;
+          fromValue?: string | null;
+          toValue?: string | null;
+          details?: unknown;
+          createdAt: Date;
+          createdByAdmin?: { id: string; name: string; email: string } | null;
+        }>).map((event) => ({
+          id: event.id,
+          type: event.type,
+          fromValue: event.fromValue ?? null,
+          toValue: event.toValue ?? null,
+          details: event.details ?? null,
+          createdAt: event.createdAt.toISOString(),
+          createdByAdmin: event.createdByAdmin ?? null,
+        }))
+      : [],
   };
 }
 

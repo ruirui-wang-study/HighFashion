@@ -13,7 +13,7 @@ import { itemKey, useCart } from "@/components/cart-provider";
 const addonSlugs = ["gripflow-training-socks", "courtdry-sweatband-set", "chillflow-sport-bottle"];
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotalCents, addItem } = useCart();
+  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotalCents, addItem, syncMessage, dismissSyncMessage } = useCart();
   const [addons, setAddons] = useState<Product[]>([]);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +42,7 @@ export function CartDrawer() {
         <Dialog.Content className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-warm p-5 shadow-utility sm:p-6">
           <div className="flex items-center justify-between"><Dialog.Title className="font-display text-3xl font-black uppercase tracking-[-0.05em]">Training kit</Dialog.Title><Dialog.Close className="rounded-full border border-graphite/10 p-2"><X className="h-5 w-5" /></Dialog.Close></div>
           <div className="mt-5 rounded-2xl bg-white p-4"><div className="flex items-center justify-between text-sm font-bold"><span>{subtotalCents >= 6000 ? "Free shipping unlocked" : `${formatCents(6000 - subtotalCents)} to free shipping`}</span><span>{formatCents(subtotalCents)}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-cool"><div className="h-full rounded-full bg-lime" style={{ width: `${progress}%` }} /></div></div>
+          {syncMessage ? <div className="mt-4 flex items-start justify-between gap-3 rounded-2xl border border-lime/40 bg-lime/10 p-4 text-sm"><p className="font-bold text-graphite">{syncMessage}</p><button className="text-xs font-bold uppercase tracking-[0.12em] text-muted" onClick={dismissSyncMessage}>Dismiss</button></div> : null}
           <div className="mt-5 flex-1 space-y-4 overflow-y-auto pr-1">
             {items.length === 0 ? <div className="rounded-3xl border border-dashed border-graphite/20 p-8 text-center"><ShoppingBag className="mx-auto h-8 w-8" /><p className="mt-3 font-bold">Your cart is ready for gear.</p><p className="mt-2 text-sm text-muted">Add support, carry, or sweat-ready essentials.</p></div> : items.map((item) => {
               const key = itemKey(item);

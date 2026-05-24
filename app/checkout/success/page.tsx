@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CheckoutSuccessPageClient } from "./checkout-success-client";
 import { buildPageMetadata } from "@/lib/seo";
+import { getPublicStorefrontSettings } from "@/lib/storefront-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
@@ -11,6 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function CheckoutSuccessPage() {
-  return <CheckoutSuccessPageClient />;
+export default async function CheckoutSuccessPage() {
+  const settings = await getPublicStorefrontSettings();
+  return (
+    <CheckoutSuccessPageClient
+      supportEmail={settings.supportEmail}
+      returnsPolicyUrl={settings.returnsPolicyUrl}
+      paymentFailureMessage={settings.paymentFailureMessage}
+    />
+  );
 }

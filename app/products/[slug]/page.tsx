@@ -23,7 +23,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: "Product Not Found | PulseGear",
     };
   }
-  return buildProductMetadata({ title: product.title, description: product.shortDescription, slug: product.slug });
+  return buildProductMetadata({
+    title: product.title,
+    description: product.shortDescription,
+    slug: product.slug,
+    seoTitle: product.seoTitle,
+    seoDescription: product.seoDescription,
+    canonicalUrl: product.canonicalUrl,
+    ogImageUrl: product.ogImageUrl,
+  });
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 import { PrismaService } from "../common/prisma.service";
 import { ProductQueryDto } from "./dto/product-query.dto";
+import { getInventoryLevel } from "../admin-products/inventory-policy";
 
 const productInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
@@ -48,6 +49,13 @@ export function mapProduct(product: ProductWithRelations) {
   const activeVariants = product.variants.filter((variant) => variant.active);
   const prices = activeVariants.map((variant) => variant.priceCents);
   const comparePrices = activeVariants.map((variant) => variant.compareAtPriceCents).filter((price): price is number => price !== null);
+  const inventoryLevel = activeVariants.length === 0
+    ? "Out of stock"
+    : activeVariants.some((variant) => getInventoryLevel(variant) === "in_stock")
+      ? "In stock"
+      : activeVariants.some((variant) => getInventoryLevel(variant) === "low_stock")
+        ? "Low stock"
+        : "Out of stock";
   return {
     id: product.id,
     title: product.title,
@@ -55,6 +63,10 @@ export function mapProduct(product: ProductWithRelations) {
     category: product.category,
     shortDescription: product.shortDescription,
     description: product.description,
+    seoTitle: product.seoTitle,
+    seoDescription: product.seoDescription,
+    canonicalUrl: product.canonicalUrl,
+    ogImageUrl: product.ogImageUrl,
     status: product.status,
     badge: product.badge,
     rating: Number(product.rating),
@@ -63,7 +75,7 @@ export function mapProduct(product: ProductWithRelations) {
     features: product.features,
     useCases: product.useCases,
     bundleEligible: product.bundleEligible,
-    priceCents: Math.min(...prices),
+    priceCents: prices.length ? Math.min(...prices) : 0,
     compareAtPriceCents: comparePrices.length ? Math.min(...comparePrices) : null,
     colors: [...new Set(activeVariants.map((variant) => variant.color))],
     sizes: [...new Set(activeVariants.map((variant) => variant.size))],
@@ -77,9 +89,11 @@ export function mapProduct(product: ProductWithRelations) {
       priceCents: variant.priceCents,
       compareAtPriceCents: variant.compareAtPriceCents,
       stock: variant.stock,
+      lowStockThreshold: variant.lowStockThreshold,
+      weightGrams: variant.weightGrams,
       active: variant.active,
     })),
-    inventoryStatus: activeVariants.some((variant) => variant.stock > 8) ? "In stock" : activeVariants.some((variant) => variant.stock > 0) ? "Low stock" : "Out of stock",
+    inventoryStatus: inventoryLevel,
   };
 }
 

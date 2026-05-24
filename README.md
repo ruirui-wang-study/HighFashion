@@ -28,6 +28,17 @@ api/prisma/                  Prisma schema, migrations, seed script
   - `/faq`
   - `/fit-guide`
   - `/about`
+- Main admin routes:
+  - `/admin/login`
+  - `/admin/dashboard`
+  - `/admin/products`
+  - `/admin/orders`
+  - `/admin/inventory`
+  - `/admin/content`
+  - `/admin/seo`
+  - `/admin/analytics`
+  - `/admin/marketing/merchant-feed`
+  - `/admin/settings`
 - Shared client state:
   - cart state in `components/cart-provider.tsx`
   - API access through `lib/api-client.ts`
@@ -51,23 +62,37 @@ api/prisma/                  Prisma schema, migrations, seed script
   - `orders`
   - `payments`
   - `webhooks`
+  - `admin-auth`
+  - `admin-products`
+  - `admin-orders`
+  - `admin-content`
+  - `admin-seo`
+  - `seo-automation`
+  - `admin-analytics`
+  - `admin-marketing`
+  - `admin-settings`
 
 ## Current Features
 
-### Commerce
+### Storefront
 
-- Product listing and product detail pages
+- Product listing, collection browsing, and product detail pages
 - Variant-aware cart using `variantId`
+- Sticky mobile add-to-cart and trust/shipping support content on product pages
 - Stripe Checkout session creation from API
 - Order creation before redirect to Stripe
-- Success page polling order state by Stripe session ID
+- Checkout success page polling order state by Stripe session ID
+- Public order lookup by order number and by checkout session ID
 - Webhook-driven order updates:
   - `PENDING`
   - `PAID`
   - `PAYMENT_FAILED`
   - `EXPIRED`
+- Payment status history returned in storefront order responses
 - Inventory deduction on successful payment
-- Order lookup by order number and by checkout session ID
+- Cart reconciliation that removes stale or unavailable variants before checkout
+- Scenario-based navigation for `Run`, `Train`, `Court`, and `Recover`
+- Public settings and copy snapshot endpoints used by the storefront
 
 ### Content and Guides
 
@@ -118,6 +143,67 @@ api/prisma/                  Prisma schema, migrations, seed script
   - related guides
   - related products
 
+### Admin and Operations
+
+- Cookie-based admin login and logout
+- Role-aware admin navigation for:
+  - `VIEWER`
+  - `OPERATOR`
+  - `CONTENT_EDITOR`
+  - `ANALYST`
+  - `ADMIN`
+  - `SUPER_ADMIN`
+- Admin dashboard with KPI summary panels
+- Product operations:
+  - product list
+  - product detail
+  - create product
+  - update product
+- Inventory operations:
+  - inventory list
+  - manual stock adjustments
+  - inventory movement persistence
+- Order operations:
+  - searchable order list
+  - payment and fulfillment filters
+  - order detail with Stripe IDs, notes, addresses, items, and status events
+  - internal order notes
+  - mark order fulfilled
+- Content operations:
+  - guide list by status
+  - guide create and edit
+  - publish, archive, and move guide back to draft
+  - FAQ editing
+- SEO reporting:
+  - SEO overview
+  - page-level SEO performance view
+  - query-level SEO performance view
+- SEO automation:
+  - automation overview
+  - manual health check run
+  - issue review and bulk review
+  - manual GSC sync
+  - manual GA4 sync
+  - opportunity generation
+  - recommendation generation, apply, and reject
+  - content brief generation and publish
+  - internal link suggestion generation and apply
+  - product SEO draft generation and manual apply
+  - SEO change log
+- Analytics:
+  - dashboard analytics
+  - sales analytics
+  - product analytics
+  - funnel analytics
+- Marketing:
+  - merchant feed overview
+  - merchant feed export in `json` or `xml`
+- Settings:
+  - storefront settings read and update
+  - public storefront settings endpoint
+  - copy config read and update
+  - public copy snapshot endpoint
+
 ## Data Model Summary
 
 ### Storefront seed content
@@ -163,6 +249,12 @@ ENABLE_STRIPE_AUTOMATIC_PAYMENT_METHODS=true
 ENABLE_PAYPAL=true
 ENABLE_BNPL=true
 PORT=4000
+GSC_SITE_URL="sc-domain:example.com"
+GSC_CLIENT_EMAIL="seo-bot@example-project.iam.gserviceaccount.com"
+GSC_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+GA4_PROPERTY_ID="123456789"
+GA4_CLIENT_EMAIL="seo-bot@example-project.iam.gserviceaccount.com"
+GA4_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
 Notes:
@@ -170,6 +262,21 @@ Notes:
 - Keep `STRIPE_SECRET_KEY` server-only.
 - The frontend should only use `NEXT_PUBLIC_API_BASE_URL`.
 - In production, set `FRONTEND_URL` or `NEXT_PUBLIC_SITE_URL` to the live domain so canonical URLs, sitemap entries, and robots host values are correct.
+- `GSC_*` and `GA4_*` are optional. If they are missing, the admin SEO automation UI shows `Not Connected` and falls back to mock-safe data instead of throwing.
+
+### GSC configuration
+
+- Create a Google service account with Search Console access to the target property.
+- Grant the service account email access in Search Console for the exact `GSC_SITE_URL`.
+- Put the service account email and private key into `.env`.
+- Use a Search Console property string such as `sc-domain:pulsegear.com` for domain properties.
+
+### GA4 configuration
+
+- Create a Google service account with GA4 Data API access to the target property.
+- Use the numeric property id in `GA4_PROPERTY_ID`.
+- Put the service account email and private key into `.env`.
+- If credentials are absent, SEO automation and analytics surfaces must keep rendering with `Not Connected`.
 
 ## Local Database
 
@@ -348,6 +455,38 @@ Sitemap `lastModified` now comes from content data instead of build time:
 
 This avoids the common problem where every deploy looks like a fresh update to search engines.
 
+### SEO automation
+
+The repo now includes a semi-automated SEO operations layer under `/admin/seo/automation`.
+
+- Health checks scan public homepage, product, collection, guide, FAQ, and approved landing pages.
+- GSC sync supports manual trigger now and cron-ready service reuse later.
+- GA4 sync supports manual trigger now and cron-ready service reuse later.
+- Opportunity, recommendation, internal-link, and content-pipeline outputs are always drafts first.
+- Product SEO generation never overwrites live fields until an operator clicks `Apply`.
+- Content pipeline never publishes until an operator clicks `Publish`.
+- All apply actions must write both `AuditLog` and `SeoChangeLog`.
+
+### Cron jobs
+
+MVP ships manual sync buttons first, but the backend service boundaries are ready for scheduled execution.
+
+Recommended production cron jobs:
+
+```text
+0 3 * * *   SEO health check
+15 3 * * *  GSC sync
+30 3 * * *  GA4 sync
+45 3 * * *  opportunity + recommendation generation
+```
+
+Recommended pattern:
+
+- Run the cron job outside the Next.js frontend.
+- Trigger the Nest admin SEO automation services from a trusted worker or scheduler.
+- Keep manual sync buttons enabled even after cron is added so operators can force a refresh.
+- Do not auto-publish from cron. Cron may only refresh data and generate drafts.
+
 ## Verification
 
 Frontend:
@@ -365,13 +504,27 @@ npm --prefix api test
 npm --prefix api run build
 ```
 
+SEO automation validation:
+
+```bash
+npm run lint
+npm run build
+```
+
+- Visit `/admin/seo/automation`.
+- Run manual health check, GSC sync, and GA4 sync.
+- Confirm `Not Connected` appears when Google credentials are unset.
+- Confirm sitemap and robots still render correctly.
+- Confirm product draft generation requires manual `Apply`.
+- Confirm content pipeline requires manual `Publish`.
+
 ## Current Gaps
 
 - No CMS yet; guides and collection SEO content are local seed data
-- No authenticated admin UI
 - No live review system
 - No live tax engine
 - No country-specific shipping matrix yet
+- Some admin analytics and SEO connector surfaces still use mock-safe fallback data when external credentials are missing
 - No production observability stack yet
 
 ## Production TODO
@@ -380,7 +533,6 @@ npm --prefix api run build
 - Configure Stripe live keys and webhook endpoint
 - Verify wallet domain registration for Apple Pay
 - Review BNPL and PayPal eligibility by market
-- Add admin workflows for product, inventory, and fulfillment
 - Add tax calculation and country-specific shipping rules
 - Add rate limiting, structured logging, and monitoring
 - Add broader integration coverage around checkout and webhooks

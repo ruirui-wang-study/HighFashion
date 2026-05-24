@@ -29,6 +29,88 @@ enum InventoryMovementType {
   RESTOCK
 }
 
+enum AdminRoleName {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  CONTENT_EDITOR
+  ANALYST
+  VIEWER
+}
+
+enum ContentType {
+  GUIDE
+  FAQ
+  COLLECTION_PAGE
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  FULFILLED
+}
+
+enum SeoPageType {
+  HOME
+  PRODUCT
+  COLLECTION
+  GUIDE
+  FAQ
+  LANDING
+}
+
+enum SeoIssueStatus {
+  OPEN
+  REVIEWED
+  ACCEPTED
+  REJECTED
+  RESOLVED
+}
+
+enum SeoRecommendationStatus {
+  DRAFT
+  REVIEWED
+  APPLIED
+  REJECTED
+}
+
+enum ContentOpportunityStatus {
+  NEW
+  REVIEWED
+  ACCEPTED
+  REJECTED
+  DONE
+}
+
+enum ContentPipelineStatus {
+  OPPORTUNITY
+  BRIEF_GENERATED
+  DRAFT_GENERATED
+  NEEDS_REVIEW
+  APPROVED
+  PUBLISHED
+  MONITORING
+}
+
+enum InternalLinkSuggestionStatus {
+  NEW
+  ACCEPTED
+  REJECTED
+  APPLIED
+}
+
 model Product {
   id               String              @id @default(cuid())
   title            String
@@ -36,6 +118,10 @@ model Product {
   category         String
   shortDescription String
   description      String
+  seoTitle         String?
+  seoDescription   String?
+  canonicalUrl     String?
+  ogImageUrl       String?
   status           ProductStatus       @default(ACTIVE)
   badge            String?
   rating           Decimal             @default(0) @db.Decimal(2, 1)
@@ -52,6 +138,340 @@ model Product {
   orderItems       OrderItem[]
 }
 
+model AdminUser {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  passwordHash  String
+  name          String
+  active        Boolean     @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  roleId        String
+  role          AdminRole   @relation(fields: [roleId], references: [id])
+  auditLogs     AuditLog[]
+  orderNotes    OrderNote[]
+  orderStatusEvents OrderStatusEvent[]
+  seoChangeLogs SeoChangeLog[]
+
+  @@index([roleId])
+}
+
+model AdminRole {
+  id        String         @id @default(cuid())
+  name      AdminRoleName  @unique
+  label     String
+  users     AdminUser[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String?
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  createdAt  DateTime    @default(now())
+  actor      AdminUser?  @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}
+
+model SeoPage {
+  id                   String     @id @default(cuid())
+  url                  String     @unique
+  pageType             SeoPageType
+  title                String?
+  metaDescription      String?
+  canonicalUrl         String?
+  h1Count              Int        @default(0)
+  missingAltCount      Int        @default(0)
+  inSitemap            Boolean    @default(false)
+  isIndexable          Boolean    @default(true)
+  hasProductJsonLd     Boolean    @default(false)
+  hasBreadcrumbJsonLd  Boolean    @default(false)
+  healthScore          Int        @default(100)
+  lastCheckedAt        DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  issues               SeoIssue[]
+  recommendations      SeoRecommendation[]
+
+  @@index([pageType])
+  @@index([healthScore])
+}
+
+model SeoIssue {
+  id           String         @id @default(cuid())
+  seoPageId     String
+  issueType     String
+  severity      String
+  message       String
+  status        SeoIssueStatus @default(OPEN)
+  metadata      Json?
+  detectedAt    DateTime      @default(now())
+  resolvedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  seoPage       SeoPage       @relation(fields: [seoPageId], references: [id], onDelete: Cascade)
+
+  @@index([seoPageId, status])
+  @@index([issueType, severity])
+}
+
+model SeoRecommendation {
+  id             String                  @id @default(cuid())
+  seoPageId      String?
+  recommendationType String
+  resourceType   String
+  resourceId     String?
+  draftPayload   Json
+  reason         String
+  priority       String
+  status         SeoRecommendationStatus @default(DRAFT)
+  isAiDraft      Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  appliedAt      DateTime?
+  seoPage        SeoPage?                @relation(fields: [seoPageId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([resourceType, resourceId])
+}
+
+model SearchConsoleQueryDaily {
+  id          String   @id @default(cuid())
+  siteUrl     String
+  page        String
+  query       String
+  country     String
+  device      String
+  date        DateTime
+  clicks      Int
+  impressions Int
+  ctr         Decimal  @db.Decimal(5, 4)
+  position    Decimal  @db.Decimal(6, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([siteUrl, date, query, page, country, device])
+  @@index([page, date])
+}
+
+model SearchConsolePageDaily {
+  id          String   @id @default(cuid())
+  siteUrl     String
+  page        String
+  country     String
+  device      String
+  date        DateTime
+  clicks      Int
+  impressions Int
+  ctr         Decimal  @db.Decimal(5, 4)
+  position    Decimal  @db.Decimal(6, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([siteUrl, date, page, country, device])
+  @@index([page, date])
+}
+
+model Ga4LandingPageDaily {
+  id            String   @id @default(cuid())
+  landingPage   String
+  sourceMedium  String
+  date          DateTime
+  sessions      Int
+  totalUsers    Int
+  pageViews     Int
+  viewItem      Int
+  addToCart     Int
+  beginCheckout Int
+  purchase      Int
+  revenue       Decimal  @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([landingPage, sourceMedium, date])
+  @@index([landingPage, date])
+}
+
+model ContentOpportunity {
+  id              String                   @id @default(cuid())
+  opportunityType String
+  keyword         String?
+  currentPage     String?
+  suggestedAction String
+  priority        String
+  expectedImpact  String
+  status          ContentOpportunityStatus @default(NEW)
+  metadata        Json?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  contentBriefs   ContentBrief[]
+
+  @@index([status, priority])
+  @@index([opportunityType])
+}
+
+model ContentBrief {
+  id                  String                @id @default(cuid())
+  sourceOpportunityId String?
+  title               String
+  targetKeyword       String
+  outline             Json?
+  draftContent        String?
+  relatedProductIds   String[]
+  relatedCollectionSlugs String[]
+  status              ContentPipelineStatus @default(OPPORTUNITY)
+  publishedContentEntryId String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  sourceOpportunity   ContentOpportunity?   @relation(fields: [sourceOpportunityId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+model InternalLinkSuggestion {
+  id          String                       @id @default(cuid())
+  sourcePage  String
+  targetPage  String
+  anchorText  String
+  reason      String
+  priority    String
+  status      InternalLinkSuggestionStatus @default(NEW)
+  metadata    Json?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+
+  @@index([status, priority])
+}
+
+model SeoChangeLog {
+  id          String     @id @default(cuid())
+  action      String
+  resourceType String
+  resourceId  String?
+  oldValue    Json?
+  newValue    Json?
+  operatorId  String?
+  createdAt   DateTime   @default(now())
+  operator    AdminUser? @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([resourceType, resourceId])
+  @@index([operatorId, createdAt])
+}
+
+model AdminSettings {
+  id                              String   @id
+  storefrontUrl                   String
+  supportEmail                    String
+  checkoutCurrency                String   @default("usd")
+  timezone                        String   @default("America/Los_Angeles")
+  shippingCountries               String[]
+  defaultFulfillmentSlaDays       Int      @default(3)
+  returnsPolicyUrl                String?
+  orderAutoFulfill                Boolean  @default(false)
+  primaryPaymentProvider          String   @default("Stripe Checkout")
+  stripeAutomaticPaymentMethods   Boolean  @default(true)
+  paymentFailureMessage           String?
+  adminSessionTtlHours            Int      @default(12)
+  auditLoggingEnabled             Boolean  @default(true)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+}
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UiCopy {
+  key       String
+  locale    String   @default("en-US")
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([key, locale])
+}
+
+model ContentTemplate {
+  key       String
+  locale    String   @default("en-US")
+  name      String
+  content   Json
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([key, locale])
+}
+
+model SeoAutomationRule {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContentEntry {
+  id                     String                   @id @default(cuid())
+  type                   ContentType
+  title                  String
+  slug                   String
+  status                 ContentStatus            @default(DRAFT)
+  seoTitle               String?
+  seoDescription         String?
+  publishedAt            DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  guideContent           GuideContent?
+  faqContent             FaqContent?
+  collectionLandingContent CollectionLandingContent?
+
+  @@unique([type, slug])
+  @@index([type, status])
+}
+
+model GuideContent {
+  entryId             String       @id
+  dek                 String
+  category            String
+  authorName          String
+  authorRole          String
+  readTime            String
+  sections            Json
+  faq                 Json
+  relatedProducts     Json
+  relatedCollections  Json
+  relatedGuides       Json
+  entry               ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+}
+
+model FaqContent {
+  entryId String       @id
+  items   Json
+  entry   ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+}
+
+model CollectionLandingContent {
+  entryId            String       @id
+  pathname           String       @unique
+  scenario           String?
+  intro              String?
+  category           String?
+  useCase            String?
+  relatedGuideSlugs  Json
+  entry              ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+}
+
 model ProductVariant {
   id                    String              @id @default(cuid())
   productId             String
@@ -61,6 +481,8 @@ model ProductVariant {
   priceCents            Int
   compareAtPriceCents   Int?
   stock                 Int                 @default(0)
+  lowStockThreshold     Int                 @default(5)
+  weightGrams           Int?
   active                Boolean             @default(true)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
@@ -116,6 +538,9 @@ model Order {
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?
   paymentMethodType       String?
+  paymentStatus           PaymentStatus     @default(PENDING)
+  fulfillmentStatus       FulfillmentStatus @default(UNFULFILLED)
+  fulfilledAt             DateTime?
   customerCountry         String?
   shippingAddress         Json?
   billingAddress          Json?
@@ -124,9 +549,41 @@ model Order {
   items                   OrderItem[]
   paymentEvents           PaymentEvent[]
   inventoryMovements      InventoryMovement[]
+  notes                   OrderNote[]
+  statusEvents            OrderStatusEvent[]
 
   @@index([status])
   @@index([stripePaymentIntentId])
+  @@index([paymentStatus, fulfillmentStatus])
+}
+
+model OrderNote {
+  id               String    @id @default(cuid())
+  orderId          String
+  note             String
+  createdByAdminId String?
+  createdAt        DateTime  @default(now())
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdByAdmin   AdminUser? @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([createdByAdminId])
+}
+
+model OrderStatusEvent {
+  id               String    @id @default(cuid())
+  orderId          String
+  type             String
+  fromValue        String?
+  toValue          String?
+  details          Json?
+  createdByAdminId String?
+  createdAt        DateTime  @default(now())
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdByAdmin   AdminUser? @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, createdAt])
+  @@index([createdByAdminId])
 }
 
 model OrderItem {

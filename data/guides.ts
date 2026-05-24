@@ -1,4 +1,4 @@
-import type { Guide } from "@/lib/types";
+import type { Guide } from "../lib/types";
 
 export const guides: Guide[] = [
   {

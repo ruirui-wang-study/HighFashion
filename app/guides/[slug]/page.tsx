@@ -5,20 +5,16 @@ import { getProducts } from "@/lib/api-client";
 import { GuideCard } from "@/components/guide-card";
 import { GuideRelatedCollections } from "@/components/guide-related-links";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getGuideBySlug, getGuidesBySlugs, guides } from "@/data/guides";
+import { getPublishedGuideBySlug, getPublishedGuides } from "@/lib/content-api";
 import { buildPageMetadata } from "@/lib/seo";
 import { buildGuideArticleStructuredData } from "@/lib/structured-data";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductCard } from "@/components/product-card";
 
-export function generateStaticParams() {
-  return guides.map((guide) => ({ slug: guide.slug }));
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const guide = getGuideBySlug(slug);
+  const guide = await getPublishedGuideBySlug(slug);
   if (!guide) {
     return {
       title: "Guide Not Found | PulseGear",
@@ -34,13 +30,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GuideDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const guide = getGuideBySlug(slug);
+  const guide = await getPublishedGuideBySlug(slug);
   if (!guide) notFound();
   const allProducts = await getProducts().catch(() => []);
+  const allGuides = await getPublishedGuides();
   const relatedProducts = guide.relatedProducts
     .map((productSlug) => allProducts.find((product) => product.slug === productSlug))
     .filter((product): product is (typeof allProducts)[number] => Boolean(product));
-  const relatedGuides = getGuidesBySlugs(guide.relatedGuides).filter((item) => item.slug !== guide.slug);
+  const relatedGuides = guide.relatedGuides
+    .map((relatedSlug) => allGuides.find((item) => item.slug === relatedSlug))
+    .filter((item): item is (typeof allGuides)[number] => Boolean(item))
+    .filter((item) => item.slug !== guide.slug);
 
   return (
     <>

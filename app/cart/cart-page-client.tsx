@@ -12,7 +12,7 @@ import { itemKey, useCart } from "@/components/cart-provider";
 const addonSlugs = ["gripflow-training-socks", "courtdry-sweatband-set", "chillflow-sport-bottle"];
 
 export function CartPageClient() {
-  const { items, subtotalCents, updateQuantity, removeItem, addItem } = useCart();
+  const { items, subtotalCents, updateQuantity, removeItem, addItem, syncMessage, dismissSyncMessage } = useCart();
   const [addons, setAddons] = useState<Product[]>([]);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +38,12 @@ export function CartPageClient() {
     <Section>
       <Container>
         <SectionHeader eyebrow="Cart" title="Build your training kit" body="Checkout validates prices, stock, and shipping on the API before redirecting to Stripe." />
+        {syncMessage ? (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-[1.5rem] border border-lime/40 bg-lime/10 p-4 text-sm">
+            <p className="font-bold text-graphite">{syncMessage}</p>
+            <button className="text-xs font-bold uppercase tracking-[0.14em] text-muted" onClick={dismissSyncMessage}>Dismiss</button>
+          </div>
+        ) : null}
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             {items.length === 0 ? <div className="rounded-[1.5rem] bg-white p-8"><p className="font-bold">Your cart is empty.</p><Button asChild className="mt-5" variant="lime"><Link href="/shop">Shop gear</Link></Button></div> : items.map((item) => {

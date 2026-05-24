@@ -1,9 +1,10 @@
 import { baseCollectionPages, collectionLandingPages } from "@/data/collection-pages";
+import { getManagedSitemapPaths, staticSeoPages } from "@/data/seo-managed-routes";
 import type { MetadataRoute } from "next";
-import { guides } from "@/data/guides";
 import { products } from "@/data/products";
+import { getPublishedGuides } from "@/lib/content-api";
 import { categorySlugs } from "@/lib/category-routes";
-import { getSiteUrl } from "@/lib/seo";
+import { getRuntimeSiteUrl } from "@/lib/seo";
 
 function daysSince(dateString: string) {
   const then = new Date(dateString);
@@ -42,17 +43,12 @@ function getCommercialPriority(updatedAt: string, basePriority: number) {
   return Math.max(basePriority - 0.08, 0.5);
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = getSiteUrl();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteUrl = await getRuntimeSiteUrl();
   const now = new Date();
-  const staticRoutes = [
-    "",
-    "/about",
-    "/shop",
-    "/faq",
-    "/fit-guide",
-    "/guides",
-  ];
+  const staticRoutes = staticSeoPages.map((page) => (page.url === "/" ? "" : page.url));
+  const managedPaths = new Set(getManagedSitemapPaths());
+  const guides = await getPublishedGuides();
 
   return [
     ...staticRoutes.map((path) => ({
@@ -62,7 +58,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: path === "" ? 1 : 0.7,
     })),
     ...products.map((product) => ({
-      url: `${siteUrl}/products/${product.slug}`,
+      url: `${siteUrl}${managedPaths.has(`/products/${product.slug}`) ? `/products/${product.slug}` : ""}`,
       lastModified: new Date(product.updatedAt),
       changeFrequency: getCommercialChangeFrequency(product.updatedAt),
       priority: getCommercialPriority(product.updatedAt, 0.8),
@@ -70,20 +66,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...Object.values(categorySlugs).map((slug) => {
       const page = baseCollectionPages[slug];
       return {
-        url: `${siteUrl}/collections/${slug}`,
+        url: `${siteUrl}${managedPaths.has(`/collections/${slug}`) ? `/collections/${slug}` : ""}`,
         lastModified: new Date(page.updatedAt),
         changeFrequency: getCommercialChangeFrequency(page.updatedAt),
         priority: getCommercialPriority(page.updatedAt, 0.75),
       };
     }),
     ...collectionLandingPages.map((page) => ({
-      url: `${siteUrl}${page.pathname}`,
+      url: `${siteUrl}${managedPaths.has(page.pathname) ? page.pathname : ""}`,
       lastModified: new Date(page.updatedAt),
       changeFrequency: getCommercialChangeFrequency(page.updatedAt),
       priority: getCommercialPriority(page.updatedAt, 0.72),
     })),
     ...guides.map((guide) => ({
-      url: `${siteUrl}/guides/${guide.slug}`,
+      url: `${siteUrl}${managedPaths.has(`/guides/${guide.slug}`) ? `/guides/${guide.slug}` : ""}`,
       lastModified: new Date(guide.updatedAt),
       changeFrequency: getGuideChangeFrequency(guide.updatedAt),
       priority: getGuidePriority(guide.updatedAt, guide.publishedAt),

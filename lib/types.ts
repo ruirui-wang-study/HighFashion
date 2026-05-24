@@ -10,6 +10,8 @@ export type ProductVariant = {
   priceCents: number;
   compareAtPriceCents?: number | null;
   stock: number;
+  lowStockThreshold?: number;
+  weightGrams?: number | null;
   active: boolean;
 };
 
@@ -24,6 +26,10 @@ export type Product = {
   reviewCount: number;
   shortDescription: string;
   description?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  canonicalUrl?: string | null;
+  ogImageUrl?: string | null;
   benefits: string[];
   features: string[];
   useCases: string[];
@@ -111,12 +117,17 @@ export type Order = {
   orderNo: string;
   email?: string | null;
   status: "PENDING" | "PAID" | "PAYMENT_FAILED" | "EXPIRED" | "FULFILLED" | "CANCELED" | "REFUNDED";
+  createdAt?: string | null;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  fulfillmentStatus: "UNFULFILLED" | "FULFILLED";
+  fulfilledAt?: string | null;
   currency: string;
   subtotalCents: number;
   shippingCents: number;
   discountCents: number;
   totalCents: number;
   stripeCheckoutSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
   paymentMethodType?: string | null;
   customerCountry?: string | null;
   shippingAddress?: OrderShippingDetails | null;
@@ -130,5 +141,28 @@ export type Order = {
     quantity: number;
     unitPriceCents: number;
     lineTotalCents: number;
+  }>;
+  notes?: Array<{
+    id: string;
+    note: string;
+    createdAt: string;
+    createdByAdmin: {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
+  }>;
+  statusEvents?: Array<{
+    id: string;
+    type: string;
+    fromValue: string | null;
+    toValue: string | null;
+    details: unknown;
+    createdAt: string;
+    createdByAdmin: {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
   }>;
 };

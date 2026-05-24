@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { Prisma, type Order, type OrderItem } from "@prisma/client";
+import { PaymentStatus, Prisma, type Order, type OrderItem } from "@prisma/client";
 import Stripe from "stripe";
 import { PrismaService } from "../common/prisma.service";
 import { StripePaymentProvider } from "../payments/stripe-payment.provider";
@@ -105,6 +105,7 @@ export class StripeWebhookService {
       where: { id: order.id, status: { not: "PAID" } },
       data: {
         status: "PAID",
+        paymentStatus: PaymentStatus.PAID,
         email: this.getCustomerEmail(session) ?? order.email,
         stripePaymentIntentId: getPaymentIntentId(session),
         paymentMethodType,
@@ -114,6 +115,20 @@ export class StripeWebhookService {
       },
     });
     if (updated.count === 0) return false;
+
+    await tx.orderStatusEvent.create({
+      data: {
+        orderId: order.id,
+        type: "PAYMENT_STATUS_CHANGED",
+        fromValue: order.paymentStatus,
+        toValue: PaymentStatus.PAID,
+        details: {
+          source: "stripe-webhook",
+          stripeCheckoutSessionId: session.id ?? null,
+          stripePaymentIntentId: getPaymentIntentId(session),
+        },
+      },
+    });
 
     for (const item of order.items) {
       await tx.productVariant.update({
@@ -140,8 +155,23 @@ export class StripeWebhookService {
       where: { id: order.id },
       data: {
         status: "PAYMENT_FAILED",
+        paymentStatus: PaymentStatus.FAILED,
         stripePaymentIntentId: getPaymentIntentId(session),
         email: this.getCustomerEmail(session) ?? order.email,
+      },
+    });
+
+    await tx.orderStatusEvent.create({
+      data: {
+        orderId: order.id,
+        type: "PAYMENT_STATUS_CHANGED",
+        fromValue: order.paymentStatus,
+        toValue: PaymentStatus.FAILED,
+        details: {
+          source: "stripe-webhook",
+          stripeCheckoutSessionId: session.id ?? null,
+          stripePaymentIntentId: getPaymentIntentId(session),
+        },
       },
     });
   }
@@ -154,6 +184,20 @@ export class StripeWebhookService {
         status: "EXPIRED",
         stripePaymentIntentId: getPaymentIntentId(session),
         email: this.getCustomerEmail(session) ?? order.email,
+      },
+    });
+
+    await tx.orderStatusEvent.create({
+      data: {
+        orderId: order.id,
+        type: "ORDER_STATUS_CHANGED",
+        fromValue: order.status,
+        toValue: "EXPIRED",
+        details: {
+          source: "stripe-webhook",
+          stripeCheckoutSessionId: session.id ?? null,
+          stripePaymentIntentId: getPaymentIntentId(session),
+        },
       },
     });
   }

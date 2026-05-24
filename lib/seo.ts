@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getPublicStorefrontSettings } from "./storefront-settings";
 
 const fallbackSiteUrl = "http://localhost:3000";
 const siteName = "PulseGear";
@@ -6,12 +7,23 @@ const defaultDescription = "PulseGear sells lightweight support, carry, hydratio
 
 export function getSiteUrl() {
   const value = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.FRONTEND_URL ?? fallbackSiteUrl;
-  return value.endsWith("/") ? value.slice(0, -1) : value;
+  return normalizeSiteUrl(value);
+}
+
+export async function getRuntimeSiteUrl() {
+  const settings = await getPublicStorefrontSettings();
+  return normalizeSiteUrl(settings.storefrontUrl || getSiteUrl());
 }
 
 export function getCanonicalUrl(pathname = "/") {
   const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
   return `${getSiteUrl()}${normalizedPath === "/" ? "" : normalizedPath}`;
+}
+
+function resolveAbsoluteUrl(value?: string | null) {
+  if (!value) return undefined;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return getCanonicalUrl(value);
 }
 
 type MetadataInput = {
@@ -21,6 +33,8 @@ type MetadataInput = {
   noIndex?: boolean;
   noFollow?: boolean;
   canonicalPathname?: string;
+  canonicalUrl?: string;
+  ogImageUrl?: string;
 };
 
 export function buildPageMetadata({
@@ -30,8 +44,11 @@ export function buildPageMetadata({
   noIndex = false,
   noFollow = false,
   canonicalPathname,
+  canonicalUrl,
+  ogImageUrl,
 }: MetadataInput): Metadata {
-  const canonical = getCanonicalUrl(canonicalPathname ?? pathname);
+  const canonical = resolveAbsoluteUrl(canonicalUrl) ?? getCanonicalUrl(canonicalPathname ?? pathname);
+  const resolvedOgImageUrl = resolveAbsoluteUrl(ogImageUrl);
   return {
     title,
     description,
@@ -44,6 +61,7 @@ export function buildPageMetadata({
       url: canonical,
       siteName,
       type: "website",
+      ...(resolvedOgImageUrl ? { images: [{ url: resolvedOgImageUrl }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
@@ -62,11 +80,21 @@ export function buildPageMetadata({
   };
 }
 
-export function buildProductMetadata(input: { title: string; description: string; slug: string }) {
+export function buildProductMetadata(input: {
+  title: string;
+  description: string;
+  slug: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  canonicalUrl?: string | null;
+  ogImageUrl?: string | null;
+}) {
   return buildPageMetadata({
-    title: `${input.title} | PulseGear`,
-    description: input.description,
+    title: input.seoTitle?.trim() || `${input.title} | PulseGear`,
+    description: input.seoDescription?.trim() || input.description,
     pathname: `/products/${input.slug}`,
+    canonicalUrl: input.canonicalUrl ?? undefined,
+    ogImageUrl: input.ogImageUrl ?? undefined,
   });
 }
 
@@ -87,3 +115,7 @@ export function buildGuideMetadata(input: { title: string; description: string; 
 }
 
 export { defaultDescription, siteName };
+
+function normalizeSiteUrl(value: string) {
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+}

@@ -14,7 +14,32 @@ export class CheckoutService {
   ) {}
 
   async createSession(input: CreateCheckoutSessionDto) {
-    const currency = (input.currency ?? this.config.get<string>("STRIPE_CURRENCY") ?? "usd").toLowerCase();
+    const settings = await this.prisma.adminSettings.upsert({
+      where: { id: "default" },
+      update: {},
+      create: {
+        id: "default",
+        storefrontUrl: this.config.get<string>("FRONTEND_URL") ?? "http://localhost:3000",
+        supportEmail: "support@pulsegear.local",
+        checkoutCurrency: (this.config.get<string>("STRIPE_CURRENCY") ?? "usd").toLowerCase(),
+        timezone: "America/Los_Angeles",
+        shippingCountries: ["US", "GB"],
+        defaultFulfillmentSlaDays: 3,
+        returnsPolicyUrl: "/faq",
+        orderAutoFulfill: false,
+        primaryPaymentProvider: "Stripe Checkout",
+        stripeAutomaticPaymentMethods: true,
+        paymentFailureMessage: "Retry checkout from cart if payment is not confirmed.",
+        adminSessionTtlHours: 12,
+        auditLoggingEnabled: true,
+      },
+    });
+
+    const currency = settings.checkoutCurrency.toLowerCase();
+    const allowedShippingCountries = settings.shippingCountries.length ? settings.shippingCountries : ["US", "GB"];
+    if (input.country && !allowedShippingCountries.includes(input.country.toUpperCase())) {
+      throw new BadRequestException({ code: "UNSUPPORTED_SHIPPING_COUNTRY", message: "Shipping country is not currently supported" });
+    }
     const normalizedItems = mergeItems(input.items);
     const variants = await this.prisma.productVariant.findMany({
       where: { id: { in: normalizedItems.map((item) => item.variantId) }, active: true, product: { status: "ACTIVE" } },
@@ -66,12 +91,13 @@ export class CheckoutService {
       },
     });
 
-    const frontendUrl = this.config.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
+    const frontendUrl = settings.storefrontUrl || this.config.get<string>("FRONTEND_URL") || "http://localhost:3000";
     const session = await this.payments.createCheckoutSession({
       orderId: order.id,
       orderNo: order.orderNo,
       email: input.email,
       currency,
+      shippingCountries: allowedShippingCountries,
       shippingAmount: shippingCents,
       lineItems: orderItems.map(({ variant, quantity }) => ({
         name: variant.product.title,

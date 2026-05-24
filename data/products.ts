@@ -1,4 +1,4 @@
-import type { UseCase } from "@/lib/types";
+import type { UseCase } from "../lib/types";
 
 export const products =  [
   {
