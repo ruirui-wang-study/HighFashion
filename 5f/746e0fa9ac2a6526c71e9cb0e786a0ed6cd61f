@@ -1,0 +1,19 @@
+docs/user-guide-zh.md
+  s_25ceba3d4b1c24::t_63d174354e08e6 1-415
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "5f746e0fa9ac2a6526c71e9cb0e786a0ed6cd61f",
+  "prompts": {},
+  "sessions": {
+    "s_25ceba3d4b1c24": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e58c5-b047-7f10-b59d-752b84c3eaca",
+        "model": "gpt-5.4"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
