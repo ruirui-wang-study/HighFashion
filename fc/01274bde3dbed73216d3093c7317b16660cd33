@@ -1,0 +1,95 @@
+api/src/seo-automation/seo-health.service.ts
+  s_25ceba3d4b1c24::t_4bc58de54e4eab 1-128
+api/src/ai/ai-config.service.ts
+  s_25ceba3d4b1c24::t_7bb5a4a80ece5a 4,7-13,16,23-24,33-34,42,51,60,63,67,73-75,77,97-98,103-107,109-113,115-116,119-123,126-148,160-166
+  s_25ceba3d4b1c24::t_de0cfd3f958f97 1-3,5-6,14-15,17-22,25-32,35-41,43-50,52-59,61-62,64-66,68-72,76,78-96,99-102,108,114,117-118,124-125,149-159,167
+api/src/product-research/product-research-ai-config.ts
+  s_25ceba3d4b1c24::t_ab1df2ea99d854 2-3,6,16,21-23,25,27-35
+api/src/product-research/product-research-assessment.service.ts
+  s_25ceba3d4b1c24::t_352739c49ba887 1-14,16-82,84-86,91-101,104-105,107-148,150-163,165-255,266-407,417,419-461,463-508
+api/src/seo-automation/seo-sync.service.ts
+  s_25ceba3d4b1c24::t_4bc58de54e4eab 1-214
+api/src/product-research/product-research-workflow.service.ts
+  s_25ceba3d4b1c24::t_352739c49ba887 1-198,200-286
+api/src/admin-settings/admin-settings.service.ts
+  s_25ceba3d4b1c24::t_3ae7af02656310 21-27
+api/src/seo-automation/seo-recommendation.service.ts
+  s_25ceba3d4b1c24::t_abb846eaf4615a 1-207
+api/src/seo-automation/seo-content-pipeline.service.ts
+  s_25ceba3d4b1c24::t_abb846eaf4615a 1-4,6-13,15-23,33-290
+  s_25ceba3d4b1c24::t_da38406e289c04 5,14,24-32
+api/src/seo-automation/seo-automation.service.ts
+  s_25ceba3d4b1c24::t_7c9c45a1706cec 1,3,5-13,26,30-38,40-59,62,82-83,96,102,106,110,114,118,122,126,130,134,138,142,146,150,154,157-158,167-168,171-172,175-176,179-180
+api/src/seo-automation/seo-automation.service.spec.ts
+  s_25ceba3d4b1c24::t_1b14aac0dca1ac 521-578
+  s_25ceba3d4b1c24::t_d3744291d4ce34 405-468
+  s_25ceba3d4b1c24::t_dbd6c659995a65 469-520
+  s_25ceba3d4b1c24::t_983c1d7cb501f2 579-602
+api/src/product-research/product-research.service.ts
+  s_25ceba3d4b1c24::t_5cd113c15be255 1,14-18,23-26,29-30,33-34,37-38,41-42,45-46,49-50,53-54,57-58,61-62,65-66,69-70,73-74,77-78,81-82,85-86,89-90,93-94,97-98,101-102,113-114,117-118,121-122,125-126,129-130,133-134,137-138
+api/src/product-research/product-research.module.ts
+  s_25ceba3d4b1c24::t_89194e54dd05cc 8-9,11,14,20-23
+  s_25ceba3d4b1c24::t_431110ffe5e22a 3,27
+api/src/seo-automation/seo-health.shared.ts
+  s_25ceba3d4b1c24::t_4bc58de54e4eab 1-201
+api/src/seo-automation/seo-automation.module.ts
+  s_25ceba3d4b1c24::t_d14bee77e0b315 9,11-13,18-24,28-31
+  s_25ceba3d4b1c24::t_1bfd70fe536395 2-3,6
+  s_25ceba3d4b1c24::t_e1f9f5a74dddd0 8,10,14,25-27
+api/src/product-research/product-research-import.service.ts
+  s_25ceba3d4b1c24::t_352739c49ba887 1-128,142-147,149-375,377-394,396-402,408-449,451-466
+components/admin/admin-seo-automation-dashboard-page.tsx
+  s_25ceba3d4b1c24::t_dfbcddf080e476 135-145,199-204
+api/src/seo-automation/seo-opportunity.service.ts
+  s_25ceba3d4b1c24::t_abb846eaf4615a 1-107
+api/src/product-research/product-research-candidate.service.ts
+  s_25ceba3d4b1c24::t_352739c49ba887 1-9,11-130,135-139,141-148,154,162-268
+  s_25ceba3d4b1c24::t_2c345ab9cbb2dc 10
+README.md
+  s_25ceba3d4b1c24::t_7bfe447db8af46 647-653
+  s_25ceba3d4b1c24::t_61408bf9d4a07b 229-235,252,257-258,260-263,266-270
+  s_25ceba3d4b1c24::t_1141a1461c0acb 708,713-714
+  s_25ceba3d4b1c24::t_8970ee3dce15c6 84-126
+  s_25ceba3d4b1c24::t_0b014655ae9ebe 391-411
+components/admin/admin-ai-provider-config-editor.tsx
+  s_25ceba3d4b1c24::t_f1558629d5c40d 9-15,34,37,50-55,59-60
+lib/seo-automation-types.ts
+  s_25ceba3d4b1c24::t_06de81ccfd3f0c 28-35
+api/src/product-research/product-research-runtime.service.ts
+  s_25ceba3d4b1c24::t_c9f88478d48db7 3,7,11-12,15,27
+api/src/ai/ai-config.types.ts
+  s_25ceba3d4b1c24::t_7bb5a4a80ece5a 3-11,15,17
+  s_25ceba3d4b1c24::t_de0cfd3f958f97 1-2,12-14,16,18-19
+api/src/seo-automation/seo-automation.drafts.ts
+  s_25ceba3d4b1c24::t_9bcc92dc08ab18 1-85
+api/src/seo-automation/seo-automation.shared.ts
+  s_25ceba3d4b1c24::t_9bcc92dc08ab18 1-66
+api/src/seo-automation/seo-internal-link.service.ts
+  s_25ceba3d4b1c24::t_abb846eaf4615a 1-148
+api/src/seo-automation/seo-ai-runtime.service.ts
+  s_25ceba3d4b1c24::t_e3b8d20f8fa4e1 295
+  s_25ceba3d4b1c24::t_de0cfd3f958f97 1,3,15-17,26-27,35-36,52-59,61-65,68,74-75,82-89,91-100,103,106-107,117-124,127-141,144,147-148,155-162,164-173,176,179-180,194-202,205-208,213-215,218,225-226,242-244,249-250,252,254,256,259-260,263-266,271-276,282-283,301,307-309,313,315,318,320-339,342-348
+  s_25ceba3d4b1c24::t_c38a435c10b4e8 2,4-14,18-25,28-34,37-51,60,66-67,69-73,76-81,90,101-102,104-105,108-116,125-126,142-143,145-146,149-154,163,174-175,177-178,181-193,203-204,209-212,216-217,219-224,227-241,245-248,251,253,255,257-258,261-262,267-270,277-281,284-294,296-300,302-306,310-312,314,316-317,319,340-341
+api/src/seo-automation/seo-change-log.service.ts
+  s_25ceba3d4b1c24::t_4bc58de54e4eab 1-25
+api/src/product-research/product-research.shared.ts
+  s_25ceba3d4b1c24::t_6f21c7dcc41667 1-88,90-461
+api/src/seo-automation/seo-automation.types.ts
+  s_25ceba3d4b1c24::t_5990195e519733 27-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "fc01274bde3dbed73216d3093c7317b16660cd33",
+  "prompts": {},
+  "sessions": {
+    "s_25ceba3d4b1c24": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e58c5-b047-7f10-b59d-752b84c3eaca",
+        "model": "gpt-5.4"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
