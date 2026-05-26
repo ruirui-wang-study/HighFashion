@@ -7,20 +7,39 @@ export function CollectionSeoContent({
   intro,
   relatedGuides,
   relatedProducts,
+  locale = "en",
 }: {
   intro: string;
   relatedGuides: Guide[];
   relatedProducts: Product[];
+  locale?: "en" | "zh";
 }) {
+  const copy = locale === "zh"
+    ? {
+        eyebrow: "分类指南",
+        title: "如何选购这个分类",
+        relatedGuides: "相关指南",
+        relatedProductsEyebrow: "相关商品",
+        relatedProductsTitle: "继续补齐你的装备方案",
+        relatedProductsBody: "浏览与这个分类购买意图自然搭配的周边商品。",
+      }
+    : {
+        eyebrow: "Collection guide",
+        title: "How to shop this category",
+        relatedGuides: "Related guides",
+        relatedProductsEyebrow: "Related products",
+        relatedProductsTitle: "Keep building the kit",
+        relatedProductsBody: "Browse adjacent products that pair naturally with this collection intent.",
+      };
   return (
     <>
       <Section className="bg-white">
         <Container className="grid gap-8 lg:grid-cols-[1.15fr_.85fr]">
           <div>
-            <SectionHeader eyebrow="Collection guide" title="How to shop this category" body={intro} />
+            <SectionHeader eyebrow={copy.eyebrow} title={copy.title} body={intro} />
           </div>
           <div className="space-y-4">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">Related guides</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">{copy.relatedGuides}</p>
             {relatedGuides.map((guide) => (
               <Link
                 key={guide.slug}
@@ -39,7 +58,7 @@ export function CollectionSeoContent({
       </Section>
       <Section>
         <Container>
-          <SectionHeader eyebrow="Related products" title="Keep building the kit" body="Browse adjacent products that pair naturally with this collection intent." />
+          <SectionHeader eyebrow={copy.relatedProductsEyebrow} title={copy.relatedProductsTitle} body={copy.relatedProductsBody} />
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {relatedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />

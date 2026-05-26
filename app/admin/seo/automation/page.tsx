@@ -1,4 +1,4 @@
-import { AdminSeoAutomationPageClient } from "@/components/admin/admin-seo-automation-page";
+import { AdminSeoAutomationPageClient } from "@/components/admin/admin-seo-automation-dashboard-page";
 import { requireAdminRole } from "@/lib/admin-guard";
 
 export default async function AdminSeoAutomationPage() {

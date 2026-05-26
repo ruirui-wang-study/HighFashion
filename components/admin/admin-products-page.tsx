@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getAdminProducts } from "@/lib/admin-api";
+import { useLocale } from "@/components/locale-provider";
 import type { AdminProduct } from "@/lib/admin-types";
 import { AdminPageHeader } from "./admin-page-header";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ function statusTone(status: AdminProduct["status"]) {
 }
 
 export function AdminProductsPageClient() {
+  const { messages } = useLocale();
+  const copy = messages.admin.products;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [category, setCategory] = useState("");
@@ -39,7 +42,7 @@ export function AdminProductsPageClient() {
       })
       .catch((nextError) => {
         if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : "Failed to load products");
+        setError(nextError instanceof Error ? nextError.message : copy.loadFailed);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -47,7 +50,7 @@ export function AdminProductsPageClient() {
     return () => {
       active = false;
     };
-  }, [search, status, category, stock]);
+  }, [search, status, category, stock, copy.loadFailed]);
 
   const summary = useMemo(
     () => ({
@@ -61,53 +64,53 @@ export function AdminProductsPageClient() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Catalog"
-        title="Products"
-        body="Manage catalog status, variant mix, pricing, and inventory from one admin surface."
-        action={{ href: "/admin/products/new", label: "New product" }}
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        body={copy.body}
+        action={{ href: "/admin/products/new", label: copy.newProduct }}
       />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Products</p><p className="mt-3 font-display text-4xl font-black">{summary.products}</p></div>
-        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Variants</p><p className="mt-3 font-display text-4xl font-black">{summary.variants}</p></div>
-        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Units on hand</p><p className="mt-3 font-display text-4xl font-black">{summary.stock}</p></div>
+        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{copy.summary.products}</p><p className="mt-3 font-display text-4xl font-black">{summary.products}</p></div>
+        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{copy.summary.variants}</p><p className="mt-3 font-display text-4xl font-black">{summary.variants}</p></div>
+        <div className="rounded-3xl bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{copy.summary.unitsOnHand}</p><p className="mt-3 font-display text-4xl font-black">{summary.stock}</p></div>
       </section>
 
       <section className="rounded-3xl bg-white p-5">
         <div className="grid gap-3 md:grid-cols-4">
-          <input value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search title, slug, SKU" className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none" />
+          <input value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder={copy.searchPlaceholder} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none" />
           <select value={status} onChange={(event) => updateFilter(setStatus, event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
-            <option value="">All status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="ACTIVE">Active</option>
-            <option value="ARCHIVED">Archived</option>
+            <option value="">{copy.filters.allStatus}</option>
+            <option value="DRAFT">{copy.filters.draft}</option>
+            <option value="ACTIVE">{copy.filters.active}</option>
+            <option value="ARCHIVED">{copy.filters.archived}</option>
           </select>
           <select value={category} onChange={(event) => updateFilter(setCategory, event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
-            <option value="">All categories</option>
+            <option value="">{copy.filters.allCategories}</option>
             {categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
           <select value={stock} onChange={(event) => updateFilter(setStock, event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
-            <option value="">All stock</option>
-            <option value="in">In stock</option>
-            <option value="low">Low stock</option>
-            <option value="out">Out of stock</option>
+            <option value="">{copy.filters.allStock}</option>
+            <option value="in">{copy.filters.inStock}</option>
+            <option value="low">{copy.filters.lowStock}</option>
+            <option value="out">{copy.filters.outOfStock}</option>
           </select>
         </div>
 
         {error ? <p className="mt-4 text-sm font-bold text-red-600">{error}</p> : null}
-        {loading ? <p className="mt-6 text-sm text-muted">Loading products...</p> : null}
+        {loading ? <p className="mt-6 text-sm text-muted">{copy.loading}</p> : null}
 
         {!loading ? (
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-graphite/10 text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                  <th className="px-3 py-3">Product</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Category</th>
-                  <th className="px-3 py-3">Variants</th>
-                  <th className="px-3 py-3">Stock</th>
-                  <th className="px-3 py-3">Updated</th>
+                  <th className="px-3 py-3">{copy.table.product}</th>
+                  <th className="px-3 py-3">{copy.table.status}</th>
+                  <th className="px-3 py-3">{copy.table.category}</th>
+                  <th className="px-3 py-3">{copy.table.variants}</th>
+                  <th className="px-3 py-3">{copy.table.stock}</th>
+                  <th className="px-3 py-3">{copy.table.updated}</th>
                   <th className="px-3 py-3"></th>
                 </tr>
               </thead>
@@ -124,18 +127,18 @@ export function AdminProductsPageClient() {
                     <td className="px-3 py-4 text-muted">{product.category}</td>
                     <td className="px-3 py-4 text-muted">{product.variants.length}</td>
                     <td className="px-3 py-4 text-muted">
-                      <p>{product.inventorySummary.totalStock} units</p>
-                      <p className="mt-1 text-xs">{product.inventorySummary.lowStockVariants} low / {product.inventorySummary.outOfStockVariants} out</p>
+                      <p>{product.inventorySummary.totalStock} {copy.units}</p>
+                      <p className="mt-1 text-xs">{copy.lowOut.replace("{low}", String(product.inventorySummary.lowStockVariants)).replace("{out}", String(product.inventorySummary.outOfStockVariants))}</p>
                     </td>
                     <td className="px-3 py-4 text-muted">{new Date(product.updatedAt).toLocaleDateString("en-US")}</td>
                     <td className="px-3 py-4 text-right">
-                      <Button asChild variant="ghost"><Link href={`/admin/products/${product.id}`}>Edit</Link></Button>
+                      <Button asChild variant="ghost"><Link href={`/admin/products/${product.id}`}>{messages.admin.common.edit}</Link></Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!products.length ? <p className="px-3 py-8 text-sm text-muted">No products match the current filters.</p> : null}
+            {!products.length ? <p className="px-3 py-8 text-sm text-muted">{copy.noProducts}</p> : null}
           </div>
         ) : null}
       </section>

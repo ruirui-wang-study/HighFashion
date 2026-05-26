@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Star } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
 import type { Product } from "@/lib/types";
 import { formatCents } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ const colorClass: Record<string, string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const { locale } = useLocale();
   const { addItem } = useCart();
   const firstAvailableVariant = product.variants.find((variant) => variant.stock > 0 && variant.active) ?? product.variants[0];
   return (
@@ -38,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
             {product.colors.slice(0, 4).map((color) => <span key={color} className={`h-4 w-4 rounded-full border border-graphite/20 ${colorClass[color] ?? "bg-cool"}`} />)}
           </div>
         </div>
-        <Button className="mt-4 w-full" variant="outline" disabled={!firstAvailableVariant} onClick={() => firstAvailableVariant ? addItem({ product, variant: firstAvailableVariant }) : undefined}>Quick add</Button>
+        <Button className="mt-4 w-full" variant="outline" disabled={!firstAvailableVariant} onClick={() => firstAvailableVariant ? addItem({ product, variant: firstAvailableVariant }) : undefined}>{locale === "zh" ? "快速加入" : "Quick add"}</Button>
       </div>
     </article>
   );

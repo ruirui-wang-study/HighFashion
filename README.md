@@ -36,6 +36,14 @@ api/prisma/                  Prisma schema, migrations, seed script
   - `/admin/inventory`
   - `/admin/content`
   - `/admin/seo`
+  - `/admin/product-research/dashboard`
+  - `/admin/product-research/candidates`
+  - `/admin/product-research/import`
+  - `/admin/product-research/suppliers`
+  - `/admin/product-research/scoring-rules`
+  - `/admin/product-research/risk-review`
+  - `/admin/product-research/test-launches`
+  - `/admin/product-research/decisions`
   - `/admin/analytics`
   - `/admin/marketing/merchant-feed`
   - `/admin/settings`
@@ -67,6 +75,7 @@ api/prisma/                  Prisma schema, migrations, seed script
   - `admin-orders`
   - `admin-content`
   - `admin-seo`
+  - `product-research`
   - `seo-automation`
   - `admin-analytics`
   - `admin-marketing`
@@ -190,6 +199,15 @@ api/prisma/                  Prisma schema, migrations, seed script
   - internal link suggestion generation and apply
   - product SEO draft generation and manual apply
   - SEO change log
+- Product research:
+  - research dashboard and candidate list
+  - candidate detail with score snapshot, supplier comparison, risk flags, and decisions
+  - import workflow entry points for AI, candidate CSV, supplier quotes, and Alibaba links
+  - supplier library route shell
+  - scoring rule activation
+  - risk review, test launch, and decision route shells
+  - convert-to-product API guarded behind approved status and blocking-risk checks
+  - audit logging for candidate create, score adjustment, decision, scoring-rule activation, and convert
 - Analytics:
   - dashboard analytics
   - sales analytics
@@ -230,6 +248,85 @@ Key database entities in `api/prisma/schema.prisma`:
 - `OrderItem`
 - `PaymentEvent`
 - `InventoryMovement`
+- `ProductCandidate`
+- `ProductCandidateScore`
+- `Supplier`
+- `ProductCandidateSupplier`
+- `ProductResearchSignal`
+- `ProductTestLaunch`
+- `ProductResearchDecision`
+- `ProductResearchImportBatch`
+- `ProductResearchRiskFlag`
+- `ScoringRule`
+
+## Product Research Scoring
+
+- Final Score uses the weighted model:
+  - `MarketDemand * 0.15`
+  - `TrendSeasonality * 0.10`
+  - `CompetitionGap * 0.10`
+  - `MarginPotential * 0.15`
+  - `LogisticsFit * 0.10`
+  - `Brandability * 0.15`
+  - `SupplierQuality * 0.10`
+  - `RiskInverse * 0.10`
+  - `Testability * 0.05`
+- `RiskInverse = 100 - RiskScore`
+- Validated score after test launch:
+  - `Validated Score = Initial Score * 0.6 + Test Score * 0.4`
+- High and blocking risk flags override score-based optimism:
+  - `RiskScore >= 70` routes the candidate to `HIGH_RISK_REVIEW`
+  - `BLOCKING` risk prevents convert to product draft
+- Convert safety rules:
+  - AI can generate candidates, scores, and drafts
+  - AI cannot auto-publish a product
+  - AI cannot auto-order inventory
+  - convert always creates `Product.status = DRAFT`
+
+## Product Research Import Templates
+
+- Candidate template:
+  - [docs/product-research-import-template-candidates.csv](/C:/good/HighFashion/docs/product-research-import-template-candidates.csv)
+- Supplier quote template:
+  - [docs/product-research-import-template-supplier-quotes.csv](/C:/good/HighFashion/docs/product-research-import-template-supplier-quotes.csv)
+
+Expected candidate CSV columns:
+- `product_name`
+- `chinese_name`
+- `category`
+- `target_market`
+- `target_audience`
+- `use_case`
+- `alibaba_keywords`
+- `notes`
+
+Expected supplier quote CSV columns:
+- `product_name`
+- `supplier_name`
+- `supplier_url`
+- `platform`
+- `moq`
+- `sample_price`
+- `unit_price`
+- `shipping_to_us`
+- `shipping_to_uk`
+- `lead_time_days`
+- `custom_logo_moq`
+- `custom_packaging_moq`
+- `trade_assurance`
+- `verified_supplier`
+- `certifications`
+- `notes`
+
+## Product Research Workflow
+
+1. Import or create candidates manually.
+2. Review duplicates before commit.
+3. Collect or enter supplier and market signals.
+4. Run scoring and risk review.
+5. Record manual decisions such as `SAMPLE`, `TEST`, `WATCH`, `APPROVE`, or `REJECT`.
+6. Capture test launch data and validated score.
+7. Convert only approved, non-blocked candidates into `Product` drafts.
 
 ## Environment
 

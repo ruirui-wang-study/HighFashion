@@ -13,7 +13,9 @@ import { CollectionSeoContent } from "@/components/collection-seo-content";
 import { CollectionView } from "@/components/collection-view";
 import { getProducts } from "@/lib/api-client";
 import { slugToCategory } from "@/lib/category-routes";
+import { getPublishedCollectionLanding, getPublishedGuides } from "@/lib/content-api";
 import { buildPageMetadata } from "@/lib/seo";
+import { getServerLocale } from "@/lib/server-locale";
 import { buildBreadcrumbStructuredData, buildCategoryBreadcrumbStructuredData } from "@/lib/structured-data";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 
@@ -62,6 +64,7 @@ export async function generateMetadata({
   params: Promise<RouteParams>;
   searchParams: Promise<FilterParams>;
 }): Promise<Metadata> {
+  const locale = await getServerLocale();
   const { segments } = await params;
   const filters = await searchParams;
   const route = resolveCollectionRoute(segments);
@@ -72,9 +75,13 @@ export async function generateMetadata({
     };
   }
 
+  const managed = await getPublishedCollectionLanding(route.pathname, locale);
+  const title = managed?.title ?? route.page.title;
+  const description = managed?.description ?? route.page.description;
+
   return buildPageMetadata({
-    title: route.page.title,
-    description: route.page.description,
+    title,
+    description,
     pathname: route.pathname,
     canonicalPathname: route.pathname,
     noIndex: hasCollectionFilterParams(filters),
@@ -88,22 +95,27 @@ export default async function CollectionPage({
   params: Promise<RouteParams>;
   searchParams: Promise<FilterParams>;
 }) {
+  const locale = await getServerLocale();
   const { segments } = await params;
   const filters = await searchParams;
   const route = resolveCollectionRoute(segments);
 
   if (!route) notFound();
 
-  const relatedGuides = getRelatedGuidesForSlugs(route.page.relatedGuideSlugs, guides);
+  const managed = await getPublishedCollectionLanding(route.pathname, locale);
+  const allGuides = await getPublishedGuides(locale).catch(() => guides);
+  const relatedGuideSlugs = managed?.relatedGuideSlugs ?? route.page.relatedGuideSlugs;
+  const relatedGuides = getRelatedGuidesForSlugs(relatedGuideSlugs, allGuides);
   const relatedProducts = (
     await getProducts({
       category: route.type === "base" ? route.category : route.page.category,
       useCase: route.type === "landing" ? route.page.useCase : undefined,
+      locale,
     }).catch(() => [])
   ).slice(0, 3);
 
-  const title = route.type === "base" ? `${route.category} gear` : route.page.title.replace(" | PulseGear", "");
-  const body = route.type === "base" ? "Use filters to narrow by sport scenario, size, price, and color." : route.page.description;
+  const title = managed?.title ?? (route.type === "base" ? `${route.category} gear` : route.page.title.replace(" | PulseGear", ""));
+  const body = managed?.description ?? (route.type === "base" ? "Use filters to narrow by sport scenario, size, price, and color." : route.page.description);
   const breadcrumbData =
     route.type === "base"
       ? buildCategoryBreadcrumbStructuredData(route.category, route.page.slug)
@@ -131,7 +143,7 @@ export default async function CollectionPage({
           />
         </Container>
       </Section>
-      <CollectionSeoContent intro={route.page.intro} relatedGuides={relatedGuides} relatedProducts={relatedProducts} />
+      <CollectionSeoContent intro={managed?.intro ?? route.page.intro} relatedGuides={relatedGuides} relatedProducts={relatedProducts} locale={locale} />
     </>
   );
 }

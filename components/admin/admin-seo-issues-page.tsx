@@ -1,13 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { bulkReviewSeoIssues, getSeoIssues } from "@/lib/admin-api";
+import { useLocale } from "@/components/locale-provider";
 import type { SeoIssueItem } from "@/lib/seo-automation-types";
 import { AdminPageHeader } from "./admin-page-header";
 import { AdminSeoNav } from "./admin-seo-nav";
 import { Button } from "@/components/ui/button";
 
 export function AdminSeoIssuesPageClient() {
+  const { locale } = useLocale();
+  const zh = locale === "zh";
+  const localeTag = zh ? "zh-CN" : "en-US";
   const [items, setItems] = useState<SeoIssueItem[]>([]);
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
@@ -20,7 +24,7 @@ export function AdminSeoIssuesPageClient() {
       setItems(await getSeoIssues());
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Failed to load issues");
+      setError(nextError instanceof Error ? nextError.message : zh ? "加载 SEO 问题列表失败" : "Failed to load issues");
     }
   }
 
@@ -34,12 +38,12 @@ export function AdminSeoIssuesPageClient() {
       })
       .catch((nextError) => {
         if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : "Failed to load issues");
+        setError(nextError instanceof Error ? nextError.message : zh ? "?? SEO ??????" : "Failed to load issues");
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [zh]);
 
   const filtered = useMemo(
     () =>
@@ -49,7 +53,7 @@ export function AdminSeoIssuesPageClient() {
 
   async function reviewSelected() {
     if (!selected.length) return;
-    if (!window.confirm(`Mark ${selected.length} issues as reviewed?`)) return;
+    if (!window.confirm(zh ? `确认将 ${selected.length} 个问题标记为已审核？` : `Mark ${selected.length} issues as reviewed?`)) return;
     await bulkReviewSeoIssues(selected);
     setSelected([]);
     await load();
@@ -57,12 +61,12 @@ export function AdminSeoIssuesPageClient() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Growth" title="SEO Issues" body="Review page-level SEO problems discovered by the automation scan." />
+      <AdminPageHeader eyebrow={zh ? "增长" : "Growth"} title={zh ? "SEO 问题" : "SEO Issues"} body={zh ? "查看自动化扫描发现的页面级 SEO 问题，并支持批量人工审核。" : "Review page-level SEO problems discovered by the automation scan."} />
       <AdminSeoNav />
-      <FilterBar status={status} priority={priority} type={type} setStatus={setStatus} setPriority={setPriority} setType={setType} types={[...new Set(items.map((item) => item.issueType))]} />
+      <FilterBar zh={zh} status={status} priority={priority} type={type} setStatus={setStatus} setPriority={setPriority} setType={setType} types={[...new Set(items.map((item) => item.issueType))]} />
       <div className="flex justify-end">
         <Button variant="ghost" onClick={() => void reviewSelected()} disabled={!selected.length}>
-          Mark Reviewed
+          {zh ? "标记为已审核" : "Mark Reviewed"}
         </Button>
       </div>
       {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
@@ -71,12 +75,12 @@ export function AdminSeoIssuesPageClient() {
           <thead>
             <tr className="border-b border-graphite/10 text-xs font-bold uppercase tracking-[0.12em] text-muted">
               <th className="px-3 py-3"></th>
-              <th className="px-3 py-3">Page</th>
-              <th className="px-3 py-3">Type</th>
-              <th className="px-3 py-3">Priority</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3">Health</th>
-              <th className="px-3 py-3">Detected</th>
+              <th className="px-3 py-3">{zh ? "页面" : "Page"}</th>
+              <th className="px-3 py-3">{zh ? "类型" : "Type"}</th>
+              <th className="px-3 py-3">{zh ? "优先级" : "Priority"}</th>
+              <th className="px-3 py-3">{zh ? "状态" : "Status"}</th>
+              <th className="px-3 py-3">{zh ? "健康分" : "Health"}</th>
+              <th className="px-3 py-3">{zh ? "发现时间" : "Detected"}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +97,7 @@ export function AdminSeoIssuesPageClient() {
                 <td className="px-3 py-4 text-muted">{item.severity}</td>
                 <td className="px-3 py-4 text-muted">{item.status}</td>
                 <td className="px-3 py-4 text-muted">{item.healthScore}</td>
-                <td className="px-3 py-4 text-muted">{new Date(item.detectedAt).toLocaleString()}</td>
+                <td className="px-3 py-4 text-muted">{new Date(item.detectedAt).toLocaleString(localeTag)}</td>
               </tr>
             ))}
           </tbody>
@@ -104,6 +108,7 @@ export function AdminSeoIssuesPageClient() {
 }
 
 function FilterBar({
+  zh,
   status,
   priority,
   type,
@@ -112,6 +117,7 @@ function FilterBar({
   setType,
   types,
 }: {
+  zh: boolean;
   status: string;
   priority: string;
   type: string;
@@ -123,17 +129,17 @@ function FilterBar({
   return (
     <section className="grid gap-3 rounded-3xl bg-white p-4 md:grid-cols-3">
       <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none">
-        <option value="all">All status</option>
-        <option value="OPEN">Open</option>
-        <option value="REVIEWED">Reviewed</option>
+        <option value="all">{zh ? "全部状态" : "All status"}</option>
+        <option value="OPEN">{zh ? "待处理" : "Open"}</option>
+        <option value="REVIEWED">{zh ? "已审核" : "Reviewed"}</option>
       </select>
       <select value={priority} onChange={(event) => setPriority(event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none">
-        <option value="all">All priority</option>
-        <option value="HIGH">High</option>
-        <option value="MEDIUM">Medium</option>
+        <option value="all">{zh ? "全部优先级" : "All priority"}</option>
+        <option value="HIGH">{zh ? "高" : "High"}</option>
+        <option value="MEDIUM">{zh ? "中" : "Medium"}</option>
       </select>
       <select value={type} onChange={(event) => setType(event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none">
-        <option value="all">All type</option>
+        <option value="all">{zh ? "全部类型" : "All type"}</option>
         {types.map((item) => <option key={item} value={item}>{item}</option>)}
       </select>
     </section>

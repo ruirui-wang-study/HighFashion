@@ -31,12 +31,22 @@ export type AdminProductVariant = {
 export type AdminProduct = {
   id: string;
   title: string;
+  titleEn?: string | null;
+  titleZh?: string | null;
   slug: string;
   category: string;
   shortDescription: string;
+  shortDescriptionEn?: string | null;
+  shortDescriptionZh?: string | null;
   description: string;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
   seoTitle?: string | null;
+  seoTitleEn?: string | null;
+  seoTitleZh?: string | null;
   seoDescription?: string | null;
+  seoDescriptionEn?: string | null;
+  seoDescriptionZh?: string | null;
   canonicalUrl?: string | null;
   ogImageUrl?: string | null;
   status: AdminProductStatus;
@@ -44,7 +54,11 @@ export type AdminProduct = {
   rating: number;
   reviewCount: number;
   benefits: string[];
+  benefitsEn: string[];
+  benefitsZh: string[];
   features: string[];
+  featuresEn: string[];
+  featuresZh: string[];
   useCases: string[];
   bundleEligible: boolean;
   createdAt: string;
@@ -82,17 +96,31 @@ export type AdminInventoryItem = {
 
 export type AdminProductPayload = {
   title: string;
+  titleEn?: string | null;
+  titleZh?: string | null;
   slug: string;
   category: string;
   shortDescription: string;
+  shortDescriptionEn?: string | null;
+  shortDescriptionZh?: string | null;
   description: string;
+  descriptionEn?: string | null;
+  descriptionZh?: string | null;
   seoTitle?: string | null;
+  seoTitleEn?: string | null;
+  seoTitleZh?: string | null;
   seoDescription?: string | null;
+  seoDescriptionEn?: string | null;
+  seoDescriptionZh?: string | null;
   canonicalUrl?: string | null;
   ogImageUrl?: string | null;
   badge?: string | null;
   benefits: string[];
+  benefitsEn: string[];
+  benefitsZh: string[];
   features: string[];
+  featuresEn: string[];
+  featuresZh: string[];
   useCases: string[];
   bundleEligible: boolean;
   status: AdminProductStatus;

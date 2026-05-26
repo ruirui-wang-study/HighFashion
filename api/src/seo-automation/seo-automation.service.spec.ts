@@ -1,3 +1,4 @@
+import { ConfigService } from "@nestjs/config";
 import type { PrismaService } from "../common/prisma.service";
 import { SeoAutomationService } from "./seo-automation.service";
 
@@ -185,6 +186,9 @@ function createPrismaMock() {
         updatedAt: new Date(),
       }),
     },
+    siteSetting: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   } as unknown as PrismaService;
 }
 
@@ -245,7 +249,7 @@ describe("SeoAutomationService", () => {
 
   it("persists recommendations and internal links so later reads return updated statuses", async () => {
     const prisma = createPrismaMock();
-    const service = new SeoAutomationService(prisma);
+    const service = new SeoAutomationService(prisma, new ConfigService());
 
     const generatedRecommendations = await service.generateRecommendations();
     const generatedLinks = await service.generateInternalLinkSuggestions();
@@ -263,5 +267,139 @@ describe("SeoAutomationService", () => {
     expect(recommendations.find((item) => item.id === "rec_1")?.status).toBe("APPLIED");
     expect(links.find((item) => item.id === "link_1")?.status).toBe("APPLIED");
     expect(logs.length).toBeGreaterThan(0);
+  });
+
+  it("uses deepseek to rewrite recommendation drafts when ai provider is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                items: [
+                  {
+                    id: "rec_1",
+                    reason: "AI rewrite reason for title.",
+                    draftPayload: {
+                      seoTitle: "AI Title | PulseGear",
+                    },
+                  },
+                  {
+                    id: "rec_2",
+                    reason: "AI rewrite reason for meta description.",
+                    draftPayload: {
+                      seoDescription: "AI meta description for runners.",
+                    },
+                  },
+                  {
+                    id: "rec_3",
+                    reason: "AI rewrite reason for guide recommendation.",
+                    draftPayload: {
+                      suggestedGuideTitle: "AI Guide Title",
+                      targetKeyword: "best knee sleeve for running",
+                    },
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const recommendations = await service.generateRecommendations();
+
+      expect(fetchMock).toHaveBeenCalled();
+      expect(recommendations.find((item) => item.id === "rec_1")?.draftPayload).toMatchObject({
+        seoTitle: "AI Title | PulseGear",
+      });
+      expect(recommendations.find((item) => item.id === "rec_2")?.draftPayload).toMatchObject({
+        seoDescription: "AI meta description for runners.",
+      });
+      expect(recommendations.find((item) => item.id === "rec_3")?.draftPayload).toMatchObject({
+        suggestedGuideTitle: "AI Guide Title",
+      });
+      expect(recommendations.find((item) => item.id === "rec_1")?.reason).toBe("AI rewrite reason for title.");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("uses deepseek to rewrite internal link drafts when ai provider is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                items: [
+                  {
+                    id: "link_1",
+                    anchorText: "runner knee sleeve support guide",
+                    reason: "AI rewrite reason for guide-to-product handoff.",
+                  },
+                  {
+                    id: "link_2",
+                    anchorText: "how to choose knee support for training runs",
+                    reason: "AI rewrite reason for product-to-guide education link.",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const links = await service.generateInternalLinkSuggestions();
+
+      expect(fetchMock).toHaveBeenCalled();
+      expect(links.find((item) => item.id === "link_1")).toMatchObject({
+        anchorText: "runner knee sleeve support guide",
+        reason: "AI rewrite reason for guide-to-product handoff.",
+      });
+      expect(links.find((item) => item.id === "link_2")).toMatchObject({
+        anchorText: "how to choose knee support for training runs",
+        reason: "AI rewrite reason for product-to-guide education link.",
+      });
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });

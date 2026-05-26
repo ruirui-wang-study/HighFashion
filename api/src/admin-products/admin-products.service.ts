@@ -55,17 +55,31 @@ export class AdminProductsService {
         const created = await tx.product.create({
           data: {
             title: input.title.trim(),
+            titleEn: normalizeLocalizedString(input.titleEn, input.title),
+            titleZh: normalizeNullableString(input.titleZh),
             slug: input.slug.trim(),
             category: input.category.trim(),
             shortDescription: input.shortDescription.trim(),
+            shortDescriptionEn: normalizeLocalizedString(input.shortDescriptionEn, input.shortDescription),
+            shortDescriptionZh: normalizeNullableString(input.shortDescriptionZh),
             description: input.description.trim(),
+            descriptionEn: normalizeLocalizedString(input.descriptionEn, input.description),
+            descriptionZh: normalizeNullableString(input.descriptionZh),
             seoTitle: normalizeNullableString(input.seoTitle),
+            seoTitleEn: normalizeLocalizedString(input.seoTitleEn, input.seoTitle),
+            seoTitleZh: normalizeNullableString(input.seoTitleZh),
             seoDescription: normalizeNullableString(input.seoDescription),
+            seoDescriptionEn: normalizeLocalizedString(input.seoDescriptionEn, input.seoDescription),
+            seoDescriptionZh: normalizeNullableString(input.seoDescriptionZh),
             canonicalUrl: normalizeNullableString(input.canonicalUrl),
             ogImageUrl: normalizeNullableString(input.ogImageUrl),
             badge: normalizeNullableString(input.badge),
             benefits: cleanStringList(input.benefits),
+            benefitsEn: cleanLocalizedStringList(input.benefitsEn, input.benefits),
+            benefitsZh: cleanStringList(input.benefitsZh ?? []),
             features: cleanStringList(input.features),
+            featuresEn: cleanLocalizedStringList(input.featuresEn, input.features),
+            featuresZh: cleanStringList(input.featuresZh ?? []),
             useCases: cleanStringList(input.useCases),
             bundleEligible: input.bundleEligible,
             status: input.status,
@@ -118,17 +132,31 @@ export class AdminProductsService {
           where: { id },
           data: {
             title: input.title.trim(),
+            titleEn: normalizeLocalizedString(input.titleEn, input.title),
+            titleZh: normalizeNullableString(input.titleZh),
             slug: input.slug.trim(),
             category: input.category.trim(),
             shortDescription: input.shortDescription.trim(),
+            shortDescriptionEn: normalizeLocalizedString(input.shortDescriptionEn, input.shortDescription),
+            shortDescriptionZh: normalizeNullableString(input.shortDescriptionZh),
             description: input.description.trim(),
+            descriptionEn: normalizeLocalizedString(input.descriptionEn, input.description),
+            descriptionZh: normalizeNullableString(input.descriptionZh),
             seoTitle: normalizeNullableString(input.seoTitle),
+            seoTitleEn: normalizeLocalizedString(input.seoTitleEn, input.seoTitle),
+            seoTitleZh: normalizeNullableString(input.seoTitleZh),
             seoDescription: normalizeNullableString(input.seoDescription),
+            seoDescriptionEn: normalizeLocalizedString(input.seoDescriptionEn, input.seoDescription),
+            seoDescriptionZh: normalizeNullableString(input.seoDescriptionZh),
             canonicalUrl: normalizeNullableString(input.canonicalUrl),
             ogImageUrl: normalizeNullableString(input.ogImageUrl),
             badge: normalizeNullableString(input.badge),
             benefits: cleanStringList(input.benefits),
+            benefitsEn: cleanLocalizedStringList(input.benefitsEn, input.benefits),
+            benefitsZh: cleanStringList(input.benefitsZh ?? []),
             features: cleanStringList(input.features),
+            featuresEn: cleanLocalizedStringList(input.featuresEn, input.features),
+            featuresZh: cleanStringList(input.featuresZh ?? []),
             useCases: cleanStringList(input.useCases),
             bundleEligible: input.bundleEligible,
             status: input.status,
@@ -227,9 +255,18 @@ function cleanStringList(values: string[]) {
   return values.map((value) => value.trim()).filter(Boolean);
 }
 
+function cleanLocalizedStringList(values: string[] | undefined, fallback: string[]) {
+  const cleaned = cleanStringList(values ?? []);
+  return cleaned.length > 0 ? cleaned : cleanStringList(fallback);
+}
+
 function normalizeNullableString(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function normalizeLocalizedString(value: string | null | undefined, fallback: string | null | undefined) {
+  return normalizeNullableString(value) ?? normalizeNullableString(fallback) ?? null;
 }
 
 function buildImageCreates(images: AdminProductImageInput[]) {

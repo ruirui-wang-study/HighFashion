@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { faqs } from "../../../data/faq";
 import { guides } from "../../../data/guides";
 import {
@@ -9,6 +10,7 @@ import {
   staticSeoPages,
 } from "../../../data/seo-managed-routes";
 import { PrismaService } from "../common/prisma.service";
+import { resolveProductResearchAiConfig } from "../product-research/product-research-ai-config";
 import type {
   ContentBriefItem,
   ContentOpportunityItem,
@@ -217,7 +219,10 @@ const recommendationDrafts = [
 
 @Injectable()
 export class SeoAutomationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService = new ConfigService(),
+  ) {}
 
   async getOverview(): Promise<SeoAutomationOverview> {
     const [health, opportunities, recommendations, briefs, logs] = await Promise.all([
@@ -455,6 +460,7 @@ export class SeoAutomationService {
   async generateRecommendations(): Promise<SeoRecommendationItem[]> {
     const pulseflexProductId = await this.getProductIdBySlug("pulseflex-knee-sleeve");
     await this.seedRecommendationDrafts(pulseflexProductId);
+    await this.enhanceRecommendationDraftsWithAi(pulseflexProductId);
 
     return this.listRecommendations();
   }
@@ -564,6 +570,7 @@ export class SeoAutomationService {
 
   async generateInternalLinkSuggestions(): Promise<InternalLinkSuggestionItem[]> {
     await this.seedInternalLinkDrafts();
+    await this.enhanceInternalLinkDraftsWithAi();
 
     return this.listInternalLinks();
   }
@@ -671,6 +678,146 @@ export class SeoAutomationService {
     }
   }
 
+  private async enhanceRecommendationDraftsWithAi(pulseflexProductId: string) {
+    const aiConfig = await resolveProductResearchAiConfig(this.prisma, this.config);
+    if (
+      aiConfig.provider !== "deepseek" ||
+      !aiConfig.apiKeyConfigured ||
+      !aiConfig.baseUrl ||
+      !(aiConfig.copyModel ?? aiConfig.scoringModel ?? aiConfig.candidateModel)
+    ) {
+      return;
+    }
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: pulseflexProductId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        shortDescription: true,
+        description: true,
+        category: true,
+        seoTitle: true,
+        seoDescription: true,
+      },
+    });
+    if (!product) {
+      return;
+    }
+
+    const model = aiConfig.copyModel ?? aiConfig.scoringModel ?? aiConfig.candidateModel;
+    const prompt = JSON.stringify({
+      task: "rewrite_seo_recommendation_drafts",
+      brand: "PulseGear",
+      tone: ["professional", "concise", "performance-focused", "non-spammy"],
+      constraints: [
+        "Return strict JSON only.",
+        "Do not mention fake reviews, ratings, stock, shipping promises, or medical claims.",
+        "Keep titles within 70 characters when possible.",
+        "Keep meta descriptions within 160 characters when possible.",
+      ],
+      product: {
+        id: product.id,
+        title: product.title,
+        slug: product.slug,
+        category: product.category,
+        shortDescription: product.shortDescription,
+        description: product.description,
+        currentSeoTitle: product.seoTitle,
+        currentSeoDescription: product.seoDescription,
+      },
+      recommendations: recommendationDrafts.map((draft) => ({
+        id: draft.id,
+        recommendationType: draft.recommendationType,
+        resourceType: draft.resourceType,
+        pageUrl: draft.pageUrl,
+        priority: draft.priority,
+        currentReason: draft.reason,
+        currentDraftPayload: draft.draftPayload,
+      })),
+      outputSchema: {
+        items: [
+          {
+            id: "string",
+            reason: "string",
+            draftPayload: {
+              seoTitle: "string?",
+              seoDescription: "string?",
+              suggestedGuideTitle: "string?",
+              targetKeyword: "string?",
+            },
+          },
+        ],
+      },
+    });
+
+    try {
+      const response = await fetch(`${aiConfig.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.get<string>("DEEPSEEK_API_KEY")!}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an ecommerce SEO assistant for a sports accessories DTC brand. Rewrite recommendation drafts into stronger buyer-first SEO copy. Return strict JSON only.",
+            },
+            { role: "user", content: prompt },
+          ],
+          thinking: { type: "disabled" },
+          max_tokens: 2200,
+          temperature: 0.5,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string | null }; finish_reason?: string | null }>;
+      };
+      const rawContent = payload.choices?.[0]?.message?.content ?? "";
+      const finishReason = payload.choices?.[0]?.finish_reason ?? null;
+      const parsed = parseAiJsonPayload(rawContent);
+      const items = Array.isArray(parsed?.items) ? parsed.items : [];
+      if (finishReason === "length" || items.length === 0) {
+        return;
+      }
+
+      for (const item of items) {
+        const record = asRecord(item);
+        const id = asString(record.id);
+        if (!id) continue;
+        const reason = asString(record.reason);
+        const draftPayload = asRecord(record.draftPayload);
+        const cleanedDraftPayload = Object.fromEntries(
+          Object.entries(draftPayload).filter(([, value]) => typeof value === "string" && value.trim().length > 0),
+        );
+        if (!reason && Object.keys(cleanedDraftPayload).length === 0) continue;
+
+        await (this.prisma as unknown as {
+          seoRecommendation: { update: (args: unknown) => Promise<unknown> };
+        }).seoRecommendation.update({
+          where: { id },
+          data: {
+            ...(reason ? { reason } : {}),
+            ...(Object.keys(cleanedDraftPayload).length > 0 ? { draftPayload: cleanedDraftPayload } : {}),
+            isAiDraft: true,
+          },
+        });
+      }
+    } catch {
+      return;
+    }
+  }
+
   private async seedInternalLinkDrafts() {
     for (const draft of internalLinkDrafts) {
       await (this.prisma as unknown as {
@@ -694,6 +841,108 @@ export class SeoAutomationService {
           status: "NEW",
         },
       });
+    }
+  }
+
+  private async enhanceInternalLinkDraftsWithAi() {
+    const aiConfig = await resolveProductResearchAiConfig(this.prisma, this.config);
+    if (
+      aiConfig.provider !== "deepseek" ||
+      !aiConfig.apiKeyConfigured ||
+      !aiConfig.baseUrl ||
+      !(aiConfig.copyModel ?? aiConfig.scoringModel ?? aiConfig.candidateModel)
+    ) {
+      return;
+    }
+
+    const model = aiConfig.copyModel ?? aiConfig.scoringModel ?? aiConfig.candidateModel;
+    const prompt = JSON.stringify({
+      task: "rewrite_internal_link_suggestions",
+      brand: "PulseGear",
+      tone: ["professional", "concise", "performance-focused", "non-spammy"],
+      constraints: [
+        "Return strict JSON only.",
+        "Do not use spammy anchors or exact-match over-optimization.",
+        "Keep anchors natural and buyer-helpful.",
+        "Do not invent medical claims or unsupported performance claims.",
+      ],
+      suggestions: internalLinkDrafts.map((draft) => ({
+        id: draft.id,
+        sourcePage: draft.sourcePage,
+        targetPage: draft.targetPage,
+        currentAnchorText: draft.anchorText,
+        currentReason: draft.reason,
+        priority: draft.priority,
+      })),
+      outputSchema: {
+        items: [
+          {
+            id: "string",
+            anchorText: "string",
+            reason: "string",
+          },
+        ],
+      },
+    });
+
+    try {
+      const response = await fetch(`${aiConfig.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.get<string>("DEEPSEEK_API_KEY")!}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an ecommerce SEO assistant for a sports accessories DTC brand. Rewrite internal link anchors and reasons into natural, buyer-first SEO suggestions. Return strict JSON only.",
+            },
+            { role: "user", content: prompt },
+          ],
+          thinking: { type: "disabled" },
+          max_tokens: 1800,
+          temperature: 0.5,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string | null }; finish_reason?: string | null }>;
+      };
+      const rawContent = payload.choices?.[0]?.message?.content ?? "";
+      const finishReason = payload.choices?.[0]?.finish_reason ?? null;
+      const parsed = parseAiJsonPayload(rawContent);
+      const items = Array.isArray(parsed?.items) ? parsed.items : [];
+      if (finishReason === "length" || items.length === 0) {
+        return;
+      }
+
+      for (const item of items) {
+        const record = asRecord(item);
+        const id = asString(record.id);
+        const anchorText = asString(record.anchorText);
+        const reason = asString(record.reason);
+        if (!id || (!anchorText && !reason)) continue;
+
+        await (this.prisma as unknown as {
+          internalLinkSuggestion: { update: (args: unknown) => Promise<unknown> };
+        }).internalLinkSuggestion.update({
+          where: { id },
+          data: {
+            ...(anchorText ? { anchorText } : {}),
+            ...(reason ? { reason } : {}),
+          },
+        });
+      }
+    } catch {
+      return;
     }
   }
 
@@ -1280,4 +1529,28 @@ function mapIssue(page: HealthCheckPage, issueType: string, detectedAt: string):
     healthScore: page.healthScore,
     detectedAt,
   };
+}
+
+function parseAiJsonPayload(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed) as Record<string, unknown>;
+  } catch {
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (!fenced?.[1]) return null;
+    try {
+      return JSON.parse(fenced[1]) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+}
+
+function asRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }

@@ -17,17 +17,31 @@ type TabKey = (typeof tabs)[number];
 function defaultPayload(): AdminProductPayload {
   return {
     title: "",
+    titleEn: "",
+    titleZh: "",
     slug: "",
     category: "Support",
     shortDescription: "",
+    shortDescriptionEn: "",
+    shortDescriptionZh: "",
     description: "",
+    descriptionEn: "",
+    descriptionZh: "",
     seoTitle: "",
+    seoTitleEn: "",
+    seoTitleZh: "",
     seoDescription: "",
+    seoDescriptionEn: "",
+    seoDescriptionZh: "",
     canonicalUrl: "",
     ogImageUrl: "",
     badge: "",
     benefits: [""],
+    benefitsEn: [""],
+    benefitsZh: [""],
     features: [""],
+    featuresEn: [""],
+    featuresZh: [""],
     useCases: ["Run"],
     bundleEligible: false,
     status: "DRAFT",
@@ -51,17 +65,31 @@ function defaultPayload(): AdminProductPayload {
 function fromProduct(product: AdminProduct): AdminProductPayload {
   return {
     title: product.title,
+    titleEn: product.titleEn ?? product.title,
+    titleZh: product.titleZh ?? "",
     slug: product.slug,
     category: product.category,
     shortDescription: product.shortDescription,
+    shortDescriptionEn: product.shortDescriptionEn ?? product.shortDescription,
+    shortDescriptionZh: product.shortDescriptionZh ?? "",
     description: product.description,
+    descriptionEn: product.descriptionEn ?? product.description,
+    descriptionZh: product.descriptionZh ?? "",
     seoTitle: product.seoTitle ?? "",
+    seoTitleEn: product.seoTitleEn ?? product.seoTitle ?? "",
+    seoTitleZh: product.seoTitleZh ?? "",
     seoDescription: product.seoDescription ?? "",
+    seoDescriptionEn: product.seoDescriptionEn ?? product.seoDescription ?? "",
+    seoDescriptionZh: product.seoDescriptionZh ?? "",
     canonicalUrl: product.canonicalUrl ?? "",
     ogImageUrl: product.ogImageUrl ?? "",
     badge: product.badge ?? "",
     benefits: product.benefits.length ? product.benefits : [""],
+    benefitsEn: product.benefitsEn.length ? product.benefitsEn : (product.benefits.length ? product.benefits : [""]),
+    benefitsZh: product.benefitsZh.length ? product.benefitsZh : [""],
     features: product.features.length ? product.features : [""],
+    featuresEn: product.featuresEn.length ? product.featuresEn : (product.features.length ? product.features : [""]),
+    featuresZh: product.featuresZh.length ? product.featuresZh : [""],
     useCases: product.useCases.length ? product.useCases : ["Run"],
     bundleEligible: product.bundleEligible,
     status: product.status,
@@ -159,12 +187,26 @@ export function AdminProductEditor({ product, productId }: { product?: AdminProd
       const payload: AdminProductPayload = {
         ...form,
         badge: form.badge?.trim() || null,
+        titleEn: form.titleEn?.trim() || form.title.trim(),
+        titleZh: form.titleZh?.trim() || null,
         seoTitle: form.seoTitle?.trim() || null,
+        seoTitleEn: form.seoTitleEn?.trim() || form.seoTitle?.trim() || null,
+        seoTitleZh: form.seoTitleZh?.trim() || null,
         seoDescription: form.seoDescription?.trim() || null,
+        seoDescriptionEn: form.seoDescriptionEn?.trim() || form.seoDescription?.trim() || null,
+        seoDescriptionZh: form.seoDescriptionZh?.trim() || null,
+        shortDescriptionEn: form.shortDescriptionEn?.trim() || form.shortDescription.trim(),
+        shortDescriptionZh: form.shortDescriptionZh?.trim() || null,
+        descriptionEn: form.descriptionEn?.trim() || form.description.trim(),
+        descriptionZh: form.descriptionZh?.trim() || null,
         canonicalUrl: form.canonicalUrl?.trim() || null,
         ogImageUrl: form.ogImageUrl?.trim() || null,
         benefits: parseLines(linesValue(form.benefits)),
+        benefitsEn: parseLines(linesValue(form.benefitsEn)),
+        benefitsZh: parseLines(linesValue(form.benefitsZh)),
         features: parseLines(linesValue(form.features)),
+        featuresEn: parseLines(linesValue(form.featuresEn)),
+        featuresZh: parseLines(linesValue(form.featuresZh)),
         images: form.images
           .map((image, index) => ({ ...image, sortOrder: image.sortOrder ?? index }))
           .filter((image) => image.url.trim() && image.alt.trim()),
@@ -250,6 +292,14 @@ export function AdminProductEditor({ product, productId }: { product?: AdminProd
             <input value={form.title} onChange={(event) => patch("title", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" required />
           </label>
           <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Title (EN)</span>
+            <input value={form.titleEn ?? ""} onChange={(event) => patch("titleEn", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2 lg:col-span-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Title (ZH)</span>
+            <input value={form.titleZh ?? ""} onChange={(event) => patch("titleZh", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Slug</span>
             <input value={form.slug} onChange={(event) => patch("slug", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" required />
           </label>
@@ -267,9 +317,25 @@ export function AdminProductEditor({ product, productId }: { product?: AdminProd
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Short description</span>
             <textarea value={form.shortDescription} onChange={(event) => patch("shortDescription", event.target.value)} className="min-h-24 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" required />
           </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Short description (EN)</span>
+            <textarea value={form.shortDescriptionEn ?? ""} onChange={(event) => patch("shortDescriptionEn", event.target.value)} className="min-h-24 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Short description (ZH)</span>
+            <textarea value={form.shortDescriptionZh ?? ""} onChange={(event) => patch("shortDescriptionZh", event.target.value)} className="min-h-24 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
           <label className="grid gap-2 lg:col-span-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Description</span>
             <textarea value={form.description} onChange={(event) => patch("description", event.target.value)} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" required />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Description (EN)</span>
+            <textarea value={form.descriptionEn ?? ""} onChange={(event) => patch("descriptionEn", event.target.value)} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Description (ZH)</span>
+            <textarea value={form.descriptionZh ?? ""} onChange={(event) => patch("descriptionZh", event.target.value)} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
           </label>
           <label className="grid gap-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Benefits</span>
@@ -278,6 +344,22 @@ export function AdminProductEditor({ product, productId }: { product?: AdminProd
           <label className="grid gap-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Features</span>
             <textarea value={linesValue(form.features)} onChange={(event) => patch("features", parseLines(event.target.value))} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Benefits (EN)</span>
+            <textarea value={linesValue(form.benefitsEn)} onChange={(event) => patch("benefitsEn", parseLines(event.target.value))} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Benefits (ZH)</span>
+            <textarea value={linesValue(form.benefitsZh)} onChange={(event) => patch("benefitsZh", parseLines(event.target.value))} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Features (EN)</span>
+            <textarea value={linesValue(form.featuresEn)} onChange={(event) => patch("featuresEn", parseLines(event.target.value))} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Features (ZH)</span>
+            <textarea value={linesValue(form.featuresZh)} onChange={(event) => patch("featuresZh", parseLines(event.target.value))} className="min-h-32 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" />
           </label>
           <div className="grid gap-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Use cases</span>
@@ -398,12 +480,28 @@ export function AdminProductEditor({ product, productId }: { product?: AdminProd
             <input value={form.seoTitle ?? ""} onChange={(event) => patch("seoTitle", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="Defaults to product title" />
           </label>
           <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">SEO title (EN)</span>
+            <input value={form.seoTitleEn ?? ""} onChange={(event) => patch("seoTitleEn", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="English SEO title" />
+          </label>
+          <label className="grid gap-2 lg:col-span-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">SEO title (ZH)</span>
+            <input value={form.seoTitleZh ?? ""} onChange={(event) => patch("seoTitleZh", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="中文 SEO 标题" />
+          </label>
+          <label className="grid gap-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">Canonical URL</span>
             <input value={form.canonicalUrl ?? ""} onChange={(event) => patch("canonicalUrl", event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="https://www.pulsegear.com/products/..." />
           </label>
           <label className="grid gap-2 lg:col-span-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">SEO description</span>
             <textarea value={form.seoDescription ?? ""} onChange={(event) => patch("seoDescription", event.target.value)} className="min-h-28 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="Defaults to short description" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">SEO description (EN)</span>
+            <textarea value={form.seoDescriptionEn ?? ""} onChange={(event) => patch("seoDescriptionEn", event.target.value)} className="min-h-28 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="English SEO description" />
+          </label>
+          <label className="grid gap-2">
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">SEO description (ZH)</span>
+            <textarea value={form.seoDescriptionZh ?? ""} onChange={(event) => patch("seoDescriptionZh", event.target.value)} className="min-h-28 rounded-2xl border border-graphite/10 px-4 py-3 outline-none" placeholder="中文 SEO 描述" />
           </label>
           <label className="grid gap-2 lg:col-span-2">
             <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">OG image URL</span>

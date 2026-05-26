@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -9,12 +9,16 @@ import {
   syncSeoGa4,
   syncSeoGsc,
 } from "@/lib/admin-api";
+import { useLocale } from "@/components/locale-provider";
 import type { SeoAutomationOverview } from "@/lib/seo-automation-types";
 import { AdminPageHeader } from "./admin-page-header";
 import { AdminSeoNav } from "./admin-seo-nav";
 import { Button } from "@/components/ui/button";
 
 export function AdminSeoAutomationPageClient() {
+  const { locale } = useLocale();
+  const zh = locale === "zh";
+  const localeTag = zh ? "zh-CN" : "en-US";
   const [data, setData] = useState<SeoAutomationOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -26,7 +30,7 @@ export function AdminSeoAutomationPageClient() {
       setData(await getSeoAutomationOverview());
       setError(null);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Failed to load SEO automation overview");
+      setError(nextError instanceof Error ? nextError.message : zh ? "加载 SEO 自动化总览失败" : "Failed to load SEO automation overview");
     } finally {
       setLoading(false);
     }
@@ -42,7 +46,7 @@ export function AdminSeoAutomationPageClient() {
       })
       .catch((nextError) => {
         if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : "Failed to load SEO automation overview");
+        setError(nextError instanceof Error ? nextError.message : zh ? "?? SEO ???????" : "Failed to load SEO automation overview");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -50,7 +54,7 @@ export function AdminSeoAutomationPageClient() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [zh]);
 
   async function runAction(action: string, handler: () => Promise<unknown>) {
     setBusy(action);
@@ -59,7 +63,7 @@ export function AdminSeoAutomationPageClient() {
       await handler();
       await load();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Action failed");
+      setError(nextError instanceof Error ? nextError.message : zh ? "操作失败" : "Action failed");
     } finally {
       setBusy(null);
     }
@@ -68,72 +72,76 @@ export function AdminSeoAutomationPageClient() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Growth"
-        title="SEO Automation"
-        body="Run health checks, sync Google data, generate opportunities, and keep all AI output behind manual review."
+        eyebrow={zh ? "增长" : "Growth"}
+        title={zh ? "SEO 自动化" : "SEO Automation"}
+        body={zh ? "执行健康检查、同步 Google 数据、生成机会与建议，并确保所有 AI 输出都经过人工审核。" : "Run health checks, sync Google data, generate opportunities, and keep all AI output behind manual review."}
       />
       <AdminSeoNav />
 
       <section className="grid gap-3 rounded-3xl bg-white p-6 xl:grid-cols-5">
         <Button variant="lime" disabled={busy === "health"} onClick={() => void runAction("health", runSeoHealthCheck)}>
-          {busy === "health" ? "Running..." : "Run Health Check"}
+          {busy === "health" ? (zh ? "执行中..." : "Running...") : (zh ? "运行健康检查" : "Run Health Check")}
         </Button>
         <Button variant="ghost" disabled={busy === "gsc"} onClick={() => void runAction("gsc", syncSeoGsc)}>
-          {busy === "gsc" ? "Syncing..." : "Sync GSC"}
+          {busy === "gsc" ? (zh ? "同步中..." : "Syncing...") : (zh ? "同步 GSC" : "Sync GSC")}
         </Button>
         <Button variant="ghost" disabled={busy === "ga4"} onClick={() => void runAction("ga4", syncSeoGa4)}>
-          {busy === "ga4" ? "Syncing..." : "Sync GA4"}
+          {busy === "ga4" ? (zh ? "同步中..." : "Syncing...") : (zh ? "同步 GA4" : "Sync GA4")}
         </Button>
         <Button variant="ghost" disabled={busy === "opps"} onClick={() => void runAction("opps", generateSeoOpportunities)}>
-          {busy === "opps" ? "Generating..." : "Generate Opportunities"}
+          {busy === "opps" ? (zh ? "生成中..." : "Generating...") : (zh ? "生成机会" : "Generate Opportunities")}
         </Button>
         <Button variant="ghost" disabled={busy === "recs"} onClick={() => void runAction("recs", generateSeoRecommendations)}>
-          {busy === "recs" ? "Generating..." : "Generate Recommendations"}
+          {busy === "recs" ? (zh ? "生成中..." : "Generating...") : (zh ? "生成建议" : "Generate Recommendations")}
         </Button>
       </section>
 
       {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
-      {loading ? <section className="rounded-3xl bg-white p-6 text-sm text-muted">Loading automation overview...</section> : null}
+      {loading ? <section className="rounded-3xl bg-white p-6 text-sm text-muted">{zh ? "正在加载 SEO 自动化总览..." : "Loading automation overview..."}</section> : null}
 
       {!loading && data ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="Scanned pages" value={String(data.healthCheck.scannedPages)} note={data.healthCheck.lastRunAt ? `Last run ${new Date(data.healthCheck.lastRunAt).toLocaleString()}` : "Not run yet"} />
-            <MetricCard label="Open issues" value={String(data.healthCheck.openIssues)} note={`Average health ${data.healthCheck.averageHealthScore}`} />
-            <MetricCard label="Opportunities" value={String(data.opportunities.total)} note={`${data.opportunities.new} new`} />
-            <MetricCard label="Draft recommendations" value={String(data.recommendations.draft)} note={`${data.recommendations.total} total`} />
+            <MetricCard
+              label={zh ? "已扫描页面" : "Scanned pages"}
+              value={String(data.healthCheck.scannedPages)}
+              note={data.healthCheck.lastRunAt ? (zh ? `最近运行 ${new Date(data.healthCheck.lastRunAt).toLocaleString(localeTag)}` : `Last run ${new Date(data.healthCheck.lastRunAt).toLocaleString(localeTag)}`) : (zh ? "尚未运行" : "Not run yet")}
+            />
+            <MetricCard label={zh ? "未处理问题" : "Open issues"} value={String(data.healthCheck.openIssues)} note={zh ? `平均健康分 ${data.healthCheck.averageHealthScore}` : `Average health ${data.healthCheck.averageHealthScore}`} />
+            <MetricCard label={zh ? "机会数" : "Opportunities"} value={String(data.opportunities.total)} note={zh ? `${data.opportunities.new} 个新增` : `${data.opportunities.new} new`} />
+            <MetricCard label={zh ? "草稿建议" : "Draft recommendations"} value={String(data.recommendations.draft)} note={zh ? `总计 ${data.recommendations.total}` : `${data.recommendations.total} total`} />
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[1fr_.9fr]">
             <div className="rounded-3xl bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">Connections</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "连接状态" : "Connections"}</p>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <ConnectionCard title="Google Search Console" status={data.searchConsole.status} />
-                <ConnectionCard title="GA4 Data API" status={data.ga4.status} />
+                <ConnectionCard title="Google Search Console" status={data.searchConsole.status} zh={zh} />
+                <ConnectionCard title="GA4 Data API" status={data.ga4.status} zh={zh} />
               </div>
             </div>
 
             <div className="rounded-3xl bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">Workflow</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "工作流约束" : "Workflow"}</p>
               <div className="mt-5 space-y-3 text-sm text-muted">
-                <p>All generated output is labeled <span className="font-bold text-graphite">AI Draft</span>.</p>
-                <p>No SEO field changes are applied without a manual <span className="font-bold text-graphite">Apply</span>.</p>
-                <p>No content is published without a manual <span className="font-bold text-graphite">Publish</span>.</p>
+                <p>{zh ? "所有生成内容都会标记为 " : "All generated output is labeled "}<span className="font-bold text-graphite">AI Draft</span>.</p>
+                <p>{zh ? "没有人工点击 " : "No SEO field changes are applied without a manual "}<span className="font-bold text-graphite">Apply</span>{zh ? " 之前，不会修改任何 SEO 字段。" : "."}</p>
+                <p>{zh ? "没有人工点击 " : "No content is published without a manual "}<span className="font-bold text-graphite">Publish</span>{zh ? " 之前，不会发布任何内容。" : "."}</p>
               </div>
             </div>
           </section>
 
           <section className="rounded-3xl bg-white p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">Recent SEO Changes</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "最近 SEO 变更" : "Recent SEO Changes"}</p>
             <div className="mt-5 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-graphite/10 text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                    <th className="px-3 py-3">Action</th>
-                    <th className="px-3 py-3">Resource</th>
-                    <th className="px-3 py-3">Resource ID</th>
-                    <th className="px-3 py-3">Operator</th>
-                    <th className="px-3 py-3">Created</th>
+                    <th className="px-3 py-3">{zh ? "动作" : "Action"}</th>
+                    <th className="px-3 py-3">{zh ? "资源" : "Resource"}</th>
+                    <th className="px-3 py-3">{zh ? "资源 ID" : "Resource ID"}</th>
+                    <th className="px-3 py-3">{zh ? "操作人" : "Operator"}</th>
+                    <th className="px-3 py-3">{zh ? "创建时间" : "Created"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,7 +151,7 @@ export function AdminSeoAutomationPageClient() {
                       <td className="px-3 py-4 text-muted">{item.resourceType}</td>
                       <td className="px-3 py-4 text-muted">{item.resourceId ?? "-"}</td>
                       <td className="px-3 py-4 text-muted">{item.operatorId ?? "-"}</td>
-                      <td className="px-3 py-4 text-muted">{new Date(item.createdAt).toLocaleString()}</td>
+                      <td className="px-3 py-4 text-muted">{new Date(item.createdAt).toLocaleString(localeTag)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -166,12 +174,12 @@ function MetricCard({ label, value, note }: { label: string; value: string; note
   );
 }
 
-function ConnectionCard({ title, status }: { title: string; status: "Connected" | "Not Connected" }) {
+function ConnectionCard({ title, status, zh }: { title: string; status: "Connected" | "Not Connected"; zh: boolean }) {
   return (
     <div className="rounded-2xl bg-warm p-4">
       <p className="text-sm font-bold text-graphite">{title}</p>
       <p className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ${status === "Connected" ? "bg-lime text-graphite" : "bg-graphite text-white"}`}>
-        {status}
+        {status === "Connected" ? (zh ? "已连接" : "Connected") : (zh ? "未连接" : "Not Connected")}
       </p>
     </div>
   );

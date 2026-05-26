@@ -42,6 +42,7 @@ enum ContentType {
   GUIDE
   FAQ
   COLLECTION_PAGE
+  STATIC_PAGE
 }
 
 enum ContentStatus {
@@ -111,24 +112,115 @@ enum InternalLinkSuggestionStatus {
   APPLIED
 }
 
+enum ProductCandidateSource {
+  MANUAL
+  AI_GENERATED
+  CSV
+  ALIBABA_LINK
+  SUPPLIER_QUOTE
+}
+
+enum ProductCandidateStatus {
+  NEW
+  RESEARCHING
+  WATCH
+  SAMPLE
+  TEST
+  APPROVED
+  REJECTED
+  HIGH_RISK_REVIEW
+}
+
+enum ProductResearchRecommendedAction {
+  SAMPLE
+  TEST
+  WATCH
+  REJECT
+  REVIEW
+}
+
+enum SupplierPlatform {
+  ALIBABA
+  ALIEXPRESS
+  CJ_DROPSHIPPING
+  AGENT
+  OTHER
+}
+
+enum ProductResearchSignalSource {
+  GOOGLE_TRENDS
+  GSC
+  GA4
+  AMAZON
+  ETSY
+  TIKTOK
+  ALIBABA
+  MANUAL
+}
+
+enum ProductTestLaunchStatus {
+  PLANNED
+  RUNNING
+  COMPLETED
+  STOPPED
+}
+
+enum ProductResearchDecisionType {
+  SAMPLE
+  TEST
+  WATCH
+  APPROVE
+  REJECT
+  CONVERT_TO_PRODUCT
+}
+
+enum ProductResearchImportSource {
+  AI
+  CSV
+  ALIBABA_LINK
+  SUPPLIER_QUOTE
+  MANUAL
+}
+
+enum ProductResearchRiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  BLOCKING
+}
+
 model Product {
-  id               String              @id @default(cuid())
-  title            String
-  slug             String              @unique
-  category         String
-  shortDescription String
-  description      String
-  seoTitle         String?
-  seoDescription   String?
-  canonicalUrl     String?
-  ogImageUrl       String?
-  status           ProductStatus       @default(ACTIVE)
-  badge            String?
-  rating           Decimal             @default(0) @db.Decimal(2, 1)
-  reviewCount      Int                 @default(0)
-  benefits         String[]
-  features         String[]
-  useCases         String[]
+    id               String              @id @default(cuid())
+    title            String
+    titleEn          String?
+    titleZh          String?
+    slug             String              @unique
+    category         String
+    shortDescription String
+    shortDescriptionEn String?
+    shortDescriptionZh String?
+    description      String
+    descriptionEn    String?
+    descriptionZh    String?
+    seoTitle         String?
+    seoTitleEn       String?
+    seoTitleZh       String?
+    seoDescription   String?
+    seoDescriptionEn String?
+    seoDescriptionZh String?
+    canonicalUrl     String?
+    ogImageUrl       String?
+    status           ProductStatus       @default(ACTIVE)
+    badge            String?
+    rating           Decimal             @default(0) @db.Decimal(2, 1)
+    reviewCount      Int                 @default(0)
+    benefits         String[]
+    benefitsEn       String[]            @default([])
+    benefitsZh       String[]            @default([])
+    features         String[]
+    featuresEn       String[]            @default([])
+    featuresZh       String[]            @default([])
+    useCases         String[]
   bundleEligible   Boolean             @default(false)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -136,6 +228,7 @@ model Product {
   variants         ProductVariant[]
   collections      ProductCollection[]
   orderItems       OrderItem[]
+  convertedFromCandidates ProductCandidate[] @relation("ConvertedProduct")
 }
 
 model AdminUser {
@@ -153,6 +246,11 @@ model AdminUser {
   orderNotes    OrderNote[]
   orderStatusEvents OrderStatusEvent[]
   seoChangeLogs SeoChangeLog[]
+  createdProductCandidates ProductCandidate[] @relation("ProductCandidateCreatedBy")
+  approvedProductCandidates ProductCandidate[] @relation("ProductCandidateApprovedBy")
+  productResearchImportBatches ProductResearchImportBatch[] @relation("ProductResearchImportBatchCreatedBy")
+  productResearchDecisions ProductResearchDecision[] @relation("ProductResearchDecisionOperator")
+  createdScoringRules ScoringRule[] @relation("ScoringRuleCreatedBy")
 
   @@index([roleId])
 }
@@ -366,6 +464,239 @@ model SeoChangeLog {
   @@index([operatorId, createdAt])
 }
 
+model ProductCandidate {
+  id                 String                           @id @default(cuid())
+  productName        String
+  chineseName        String?
+  slugSuggestion     String?
+  category           String
+  targetMarket       String
+  targetAudience     String?
+  useCase            String?
+  description        String?
+  notes              String?
+  brandAngle         String?
+  positioningSummary String?
+  alibabaKeywords    String?
+  source             ProductCandidateSource
+  sourceUrl          String?
+  rawImportData      Json?
+  aiDraftPayload     Json?
+  status             ProductCandidateStatus          @default(NEW)
+  recommendedAction  ProductResearchRecommendedAction @default(WATCH)
+  finalScore         Float?
+  riskScore          Int?
+  validatedScore     Float?
+  possibleDuplicateOfId String?
+  createdById        String?
+  approvedById       String?
+  approvedAt         DateTime?
+  convertedProductId String?
+  createdAt          DateTime                         @default(now())
+  updatedAt          DateTime                         @updatedAt
+  possibleDuplicateOf ProductCandidate?              @relation("CandidatePossibleDuplicate", fields: [possibleDuplicateOfId], references: [id], onDelete: SetNull)
+  duplicateCandidates ProductCandidate[]             @relation("CandidatePossibleDuplicate")
+  createdBy          AdminUser?                      @relation("ProductCandidateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedBy         AdminUser?                      @relation("ProductCandidateApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  convertedProduct   Product?                        @relation("ConvertedProduct", fields: [convertedProductId], references: [id], onDelete: SetNull)
+  scores             ProductCandidateScore[]
+  suppliers          ProductCandidateSupplier[]
+  signals            ProductResearchSignal[]
+  testLaunches       ProductTestLaunch[]
+  decisions          ProductResearchDecision[]
+  riskFlags          ProductResearchRiskFlag[]
+
+  @@index([status, updatedAt])
+  @@index([source, createdAt])
+  @@index([targetMarket, category])
+  @@index([productName])
+  @@index([productName, category, targetMarket])
+  @@index([recommendedAction])
+  @@index([finalScore])
+  @@index([riskScore])
+  @@index([possibleDuplicateOfId])
+  @@index([createdById])
+  @@index([approvedById])
+}
+
+model ProductCandidateScore {
+  id                      String            @id @default(cuid())
+  candidateId             String
+  marketDemandScore       Int
+  trendSeasonalityScore   Int
+  competitionGapScore     Int
+  marginPotentialScore    Int
+  logisticsFitScore       Int
+  brandabilityScore       Int
+  supplierQualityScore    Int
+  riskScore               Int
+  riskInverseScore        Int
+  testabilityScore        Int
+  finalScore              Float
+  scoringVersion          String
+  scoreReasonJson         Json?
+  isManualAdjusted        Boolean           @default(false)
+  manualAdjustmentReason  String?
+  createdAt               DateTime          @default(now())
+  computedAt              DateTime          @default(now())
+  candidate               ProductCandidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@index([scoringVersion])
+}
+
+model Supplier {
+  id                    String                     @id @default(cuid())
+  platform              SupplierPlatform
+  name                  String
+  url                   String?
+  country               String?
+  verifiedSupplier      Boolean                    @default(false)
+  tradeAssurance        Boolean                    @default(false)
+  yearsOnPlatform       Int?
+  responseRate          Float?
+  moq                   Int?
+  samplePriceCents      Int?
+  unitPriceCents        Int?
+  customLogoMoq         Int?
+  customPackagingMoq    Int?
+  leadTimeDays          Int?
+  shippingToUSCents     Int?
+  shippingToUKCents     Int?
+  certifications        String[]                  @default([])
+  notes                 String?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  productCandidates     ProductCandidateSupplier[]
+
+  @@index([platform, country])
+  @@index([verifiedSupplier, tradeAssurance])
+  @@index([name])
+  @@index([url])
+}
+
+model ProductCandidateSupplier {
+  candidateId            String
+  supplierId             String
+  quotedUnitPriceCents   Int?
+  quotedMoq              Int?
+  quotedLeadTimeDays     Int?
+  quoteFileUrl           String?
+  notes                  String?
+  candidate              ProductCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  supplier               Supplier         @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([candidateId, supplierId])
+  @@index([supplierId])
+}
+
+model ProductResearchSignal {
+  id           String                      @id @default(cuid())
+  candidateId  String
+  source       ProductResearchSignalSource
+  metricName   String
+  metricValue  Float
+  rawData      Json?
+  collectedAt  DateTime
+  candidate    ProductCandidate            @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, source])
+  @@index([metricName, collectedAt])
+}
+
+model ProductTestLaunch {
+  id                    String                   @id @default(cuid())
+  candidateId           String
+  landingPageUrl        String?
+  channel               String
+  channelDetail         String?
+  adSpendCents          Int                      @default(0)
+  impressions           Int                      @default(0)
+  clicks                Int                      @default(0)
+  ctr                   Float                    @default(0)
+  productViews          Int                      @default(0)
+  addToCart             Int                      @default(0)
+  addToCartRate         Float                    @default(0)
+  beginCheckout         Int                      @default(0)
+  checkoutRate          Float                    @default(0)
+  purchases             Int                      @default(0)
+  purchaseRate          Float                    @default(0)
+  revenueCents          Int                      @default(0)
+  refunds               Int                      @default(0)
+  customerFeedbackScore Int?
+  refundRiskScore       Int?
+  customerFeedbackSummary String?
+  notes                 String?
+  testScore             Float?
+  status                ProductTestLaunchStatus  @default(PLANNED)
+  startedAt             DateTime?
+  endedAt               DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  candidate             ProductCandidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, status])
+  @@index([status, startedAt])
+}
+
+model ProductResearchDecision {
+  id          String                      @id @default(cuid())
+  candidateId String
+  decision    ProductResearchDecisionType
+  reason      String?
+  operatorId  String?
+  createdAt   DateTime                    @default(now())
+  candidate   ProductCandidate            @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  operator    AdminUser?                  @relation("ProductResearchDecisionOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, createdAt])
+  @@index([operatorId, createdAt])
+  @@index([decision, createdAt])
+}
+
+model ProductResearchImportBatch {
+  id             String                      @id @default(cuid())
+  source         ProductResearchImportSource
+  fileName       String?
+  totalRows      Int                         @default(0)
+  createdCount   Int                         @default(0)
+  skippedCount   Int                         @default(0)
+  duplicateCount Int                         @default(0)
+  invalidCount   Int                         @default(0)
+  createdById    String?
+  createdAt      DateTime                    @default(now())
+  createdBy      AdminUser?                  @relation("ProductResearchImportBatchCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([source, createdAt])
+  @@index([createdById, createdAt])
+}
+
+model ProductResearchRiskFlag {
+  id          String                       @id @default(cuid())
+  candidateId String
+  riskType    String
+  severity    ProductResearchRiskSeverity
+  message     String
+  createdAt   DateTime                     @default(now())
+  candidate   ProductCandidate             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, severity])
+  @@index([severity, createdAt])
+}
+
+model ScoringRule {
+  id         String      @id @default(cuid())
+  version    String      @unique
+  weights    Json
+  isActive   Boolean     @default(false)
+  createdById String?
+  createdAt  DateTime    @default(now())
+  createdBy  AdminUser?  @relation("ScoringRuleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([isActive, createdAt])
+  @@index([createdById])
+}
+
 model AdminSettings {
   id                              String   @id
   storefrontUrl                   String
@@ -422,54 +753,87 @@ model SeoAutomationRule {
 }
 
 model ContentEntry {
-  id                     String                   @id @default(cuid())
-  type                   ContentType
-  title                  String
-  slug                   String
-  status                 ContentStatus            @default(DRAFT)
-  seoTitle               String?
-  seoDescription         String?
-  publishedAt            DateTime?
+    id                     String                   @id @default(cuid())
+    type                   ContentType
+    title                  String
+    titleEn                String?
+    titleZh                String?
+    slug                   String
+    status                 ContentStatus            @default(DRAFT)
+    seoTitle               String?
+    seoTitleEn             String?
+    seoTitleZh             String?
+    seoDescription         String?
+    seoDescriptionEn       String?
+    seoDescriptionZh       String?
+    publishedAt            DateTime?
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
   guideContent           GuideContent?
   faqContent             FaqContent?
   collectionLandingContent CollectionLandingContent?
+  staticPageContent      StaticPageContent?
 
   @@unique([type, slug])
   @@index([type, status])
 }
 
 model GuideContent {
-  entryId             String       @id
-  dek                 String
-  category            String
-  authorName          String
-  authorRole          String
-  readTime            String
-  sections            Json
-  faq                 Json
-  relatedProducts     Json
-  relatedCollections  Json
-  relatedGuides       Json
+    entryId             String       @id
+    dek                 String
+    dekEn               String?
+    dekZh               String?
+    category            String
+    categoryEn          String?
+    categoryZh          String?
+    authorName          String
+    authorRole          String
+    authorRoleEn        String?
+    authorRoleZh        String?
+    readTime            String
+    readTimeEn          String?
+    readTimeZh          String?
+    sections            Json
+    sectionsEn          Json?
+    sectionsZh          Json?
+    faq                 Json
+    faqEn               Json?
+    faqZh               Json?
+    relatedProducts     Json
+    relatedCollections  Json
+    relatedGuides       Json
   entry               ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 }
 
 model FaqContent {
-  entryId String       @id
-  items   Json
-  entry   ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+    entryId  String       @id
+    items    Json
+    itemsEn  Json?
+    itemsZh  Json?
+    entry    ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 }
 
 model CollectionLandingContent {
-  entryId            String       @id
-  pathname           String       @unique
-  scenario           String?
-  intro              String?
-  category           String?
-  useCase            String?
-  relatedGuideSlugs  Json
-  entry              ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+    entryId            String       @id
+    pathname           String       @unique
+    scenario           String?
+    intro              String?
+    introEn            String?
+    introZh            String?
+    category           String?
+    useCase            String?
+    relatedGuideSlugs  Json
+    entry              ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  }
+
+model StaticPageContent {
+    entryId            String       @id
+    pageKey            String       @unique
+    pathname           String       @unique
+    content            Json
+    contentEn          Json?
+    contentZh          Json?
+    entry              ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 }
 
 model ProductVariant {

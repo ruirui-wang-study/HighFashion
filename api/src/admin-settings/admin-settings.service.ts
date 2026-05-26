@@ -7,6 +7,7 @@ import type {
   AdminCopyConfigPayload,
   AdminSettingsPayload,
   CopyConfigItem,
+  LocalizedCopyConfig,
   PublicSiteCopySnapshotPayload,
   PublicStorefrontSettingsPayload,
   TemplateConfigItem,
@@ -17,11 +18,64 @@ const defaultSiteSettings: CopyConfigItem[] = [
   { key: "site.brand_name", value: "PulseGear" },
   { key: "site.shipping_copy", value: "Free shipping over $60" },
   { key: "site.returns_copy", value: "30-day returns" },
+  { key: "product_research.ai.provider", value: "deepseek" },
+  { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+  { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+  { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+  { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+  { key: "product_research.ai.model_fast", value: "deepseek-v4-flash" },
 ];
 const defaultUiCopy: CopyConfigItem[] = [
   { key: "ui.admin.seo.ai_draft_badge", value: "AI Draft" },
   { key: "ui.admin.seo.not_connected", value: "Not Connected" },
   { key: "ui.admin.seo.apply_confirm_title", value: "Apply this draft to live data?" },
+  { key: "ui.site.language.label", value: "Language" },
+  { key: "ui.site.language.en", value: "EN" },
+  { key: "ui.site.language.zh", value: "中文" },
+  { key: "ui.site.promo", value: "Free shipping over $60 / 30-day returns" },
+  { key: "ui.site.open_cart", value: "Open cart" },
+  { key: "ui.site.open_menu", value: "Open menu" },
+  { key: "ui.site.nav.shop", value: "Shop" },
+  { key: "ui.site.nav.run", value: "Run" },
+  { key: "ui.site.nav.train", value: "Train" },
+  { key: "ui.site.nav.court", value: "Court" },
+  { key: "ui.site.nav.guides", value: "Guides" },
+  { key: "ui.site.nav.fit_guide", value: "Fit Guide" },
+  { key: "ui.site.footer.description", value: "Lightweight support and carry essentials for running, training, and court sports." },
+  { key: "ui.site.footer.newsletter_placeholder", value: "Email for training guides" },
+  { key: "ui.site.footer.join", value: "Join" },
+  { key: "ui.site.footer.shop", value: "Shop" },
+  { key: "ui.site.footer.support", value: "Support" },
+  { key: "ui.site.footer.all_gear", value: "All gear" },
+  { key: "ui.site.footer.training_guides", value: "Training Guides" },
+  { key: "ui.site.footer.shipping_returns", value: "Shipping & Returns" },
+  { key: "ui.site.footer.about", value: "About" },
+];
+const defaultUiCopyZh: CopyConfigItem[] = [
+  { key: "ui.admin.seo.ai_draft_badge", value: "AI 草稿" },
+  { key: "ui.admin.seo.not_connected", value: "未连接" },
+  { key: "ui.admin.seo.apply_confirm_title", value: "确认将此草稿应用到正式数据吗？" },
+  { key: "ui.site.language.label", value: "语言" },
+  { key: "ui.site.language.en", value: "EN" },
+  { key: "ui.site.language.zh", value: "中文" },
+  { key: "ui.site.promo", value: "满 $60 免运费 / 30 天退货" },
+  { key: "ui.site.open_cart", value: "打开购物车" },
+  { key: "ui.site.open_menu", value: "打开菜单" },
+  { key: "ui.site.nav.shop", value: "商城" },
+  { key: "ui.site.nav.run", value: "跑步" },
+  { key: "ui.site.nav.train", value: "训练" },
+  { key: "ui.site.nav.court", value: "球场" },
+  { key: "ui.site.nav.guides", value: "指南" },
+  { key: "ui.site.nav.fit_guide", value: "尺码指南" },
+  { key: "ui.site.footer.description", value: "面向跑步、训练与球类运动的轻量支撑与随身装备。" },
+  { key: "ui.site.footer.newsletter_placeholder", value: "输入邮箱获取训练指南" },
+  { key: "ui.site.footer.join", value: "订阅" },
+  { key: "ui.site.footer.shop", value: "选购" },
+  { key: "ui.site.footer.support", value: "支持" },
+  { key: "ui.site.footer.all_gear", value: "全部装备" },
+  { key: "ui.site.footer.training_guides", value: "训练指南" },
+  { key: "ui.site.footer.shipping_returns", value: "配送与退货" },
+  { key: "ui.site.footer.about", value: "关于我们" },
 ];
 const defaultTemplates: TemplateConfigItem[] = [
   { key: "template.seo.product.title", name: "Product title template", value: "{{title}} | PulseGear", status: "ACTIVE" },
@@ -93,13 +147,19 @@ export class AdminSettingsService {
   async getCopyConfig(): Promise<AdminCopyConfigPayload> {
     const [siteSettings, uiCopy, contentTemplates, seoRules] = await Promise.all([
       this.prisma.siteSetting.findMany({ orderBy: { key: "asc" } }),
-      this.prisma.uiCopy.findMany({ where: { locale: "en-US" }, orderBy: { key: "asc" } }),
+      this.prisma.uiCopy.findMany({ where: { locale: { in: ["en", "en-US", "zh", "zh-CN"] } }, orderBy: [{ locale: "asc" }, { key: "asc" }] }),
       this.prisma.contentTemplate.findMany({ where: { locale: "en-US" }, orderBy: { key: "asc" } }),
       this.prisma.seoAutomationRule.findMany({ orderBy: { key: "asc" } }),
     ]);
 
     const mergedSiteSettings = mergeConfigItems(defaultSiteSettings, siteSettings.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })));
-    const mergedUiCopy = mergeConfigItems(defaultUiCopy, uiCopy.map((item) => ({ key: item.key, value: item.value })));
+    const mergedUiCopy = mergeLocalizedConfigItems(
+      { en: defaultUiCopy, zh: defaultUiCopyZh },
+      {
+        en: uiCopy.filter((item) => item.locale === "en" || item.locale === "en-US").map((item) => ({ key: item.key, value: item.value })),
+        zh: uiCopy.filter((item) => item.locale === "zh" || item.locale === "zh-CN").map((item) => ({ key: item.key, value: item.value })),
+      },
+    );
     const mergedTemplates = mergeTemplateItems(defaultTemplates, contentTemplates.map((item) => ({
       key: item.key,
       name: item.name,
@@ -126,12 +186,14 @@ export class AdminSettingsService {
           create: { key: item.key, value: item.value as Prisma.InputJsonValue },
         });
       }
-      for (const item of input.uiCopy) {
-        await tx.uiCopy.upsert({
-          where: { key_locale: { key: item.key, locale: "en-US" } },
-          update: { value: String(item.value ?? "") },
-          create: { key: item.key, locale: "en-US", value: String(item.value ?? "") },
-        });
+      for (const locale of ["en", "zh"] as const) {
+        for (const item of input.uiCopy[locale]) {
+          await tx.uiCopy.upsert({
+            where: { key_locale: { key: item.key, locale } },
+            update: { value: String(item.value ?? "") },
+            create: { key: item.key, locale, value: String(item.value ?? "") },
+          });
+        }
       }
       for (const item of input.contentTemplates) {
         await tx.contentTemplate.upsert({
@@ -157,7 +219,7 @@ export class AdminSettingsService {
           details: {
             actorEmail: actor.adminEmail,
             siteSettings: input.siteSettings.length,
-            uiCopy: input.uiCopy.length,
+            uiCopy: input.uiCopy.en.length + input.uiCopy.zh.length,
             contentTemplates: input.contentTemplates.length,
             seoRules: input.seoRules.length,
           },
@@ -168,10 +230,11 @@ export class AdminSettingsService {
     return this.getCopyConfig();
   }
 
-  async getPublicSiteCopySnapshot(): Promise<PublicSiteCopySnapshotPayload> {
+  async getPublicSiteCopySnapshot(locale: "en" | "zh" = "en"): Promise<PublicSiteCopySnapshotPayload> {
     const config = await this.getCopyConfig();
     const getValue = (items: CopyConfigItem[], key: string) => items.find((item) => item.key === key)?.value;
     const getTemplate = (items: TemplateConfigItem[], key: string) => items.find((item) => item.key === key)?.value;
+    const localeUiCopy = config.uiCopy[locale];
 
     return {
       site: {
@@ -179,10 +242,39 @@ export class AdminSettingsService {
         shippingCopy: String(getValue(config.siteSettings, "site.shipping_copy") ?? "Free shipping over $60"),
         returnsCopy: String(getValue(config.siteSettings, "site.returns_copy") ?? "30-day returns"),
       },
+      storefront: {
+        languageLabel: String(getValue(localeUiCopy, "ui.site.language.label") ?? (locale === "zh" ? "语言" : "Language")),
+        languageEn: String(getValue(localeUiCopy, "ui.site.language.en") ?? "EN"),
+        languageZh: String(getValue(localeUiCopy, "ui.site.language.zh") ?? "中文"),
+        promo: String(getValue(localeUiCopy, "ui.site.promo") ?? (locale === "zh" ? "满 $60 免运费 / 30 天退货" : "Free shipping over $60 / 30-day returns")),
+        openCart: String(getValue(localeUiCopy, "ui.site.open_cart") ?? (locale === "zh" ? "打开购物车" : "Open cart")),
+        openMenu: String(getValue(localeUiCopy, "ui.site.open_menu") ?? (locale === "zh" ? "打开菜单" : "Open menu")),
+        nav: {
+          shop: String(getValue(localeUiCopy, "ui.site.nav.shop") ?? (locale === "zh" ? "商城" : "Shop")),
+          run: String(getValue(localeUiCopy, "ui.site.nav.run") ?? (locale === "zh" ? "跑步" : "Run")),
+          train: String(getValue(localeUiCopy, "ui.site.nav.train") ?? (locale === "zh" ? "训练" : "Train")),
+          court: String(getValue(localeUiCopy, "ui.site.nav.court") ?? (locale === "zh" ? "球场" : "Court")),
+          guides: String(getValue(localeUiCopy, "ui.site.nav.guides") ?? (locale === "zh" ? "指南" : "Guides")),
+          fitGuide: String(getValue(localeUiCopy, "ui.site.nav.fit_guide") ?? (locale === "zh" ? "尺码指南" : "Fit Guide")),
+        },
+        footer: {
+          description: String(getValue(localeUiCopy, "ui.site.footer.description") ?? (locale === "zh"
+            ? "面向跑步、训练与球类运动的轻量支撑与随身装备。"
+            : "Lightweight support and carry essentials for running, training, and court sports.")),
+          newsletterPlaceholder: String(getValue(localeUiCopy, "ui.site.footer.newsletter_placeholder") ?? (locale === "zh" ? "输入邮箱获取训练指南" : "Email for training guides")),
+          join: String(getValue(localeUiCopy, "ui.site.footer.join") ?? (locale === "zh" ? "订阅" : "Join")),
+          shop: String(getValue(localeUiCopy, "ui.site.footer.shop") ?? (locale === "zh" ? "选购" : "Shop")),
+          support: String(getValue(localeUiCopy, "ui.site.footer.support") ?? (locale === "zh" ? "支持" : "Support")),
+          allGear: String(getValue(localeUiCopy, "ui.site.footer.all_gear") ?? (locale === "zh" ? "全部装备" : "All gear")),
+          trainingGuides: String(getValue(localeUiCopy, "ui.site.footer.training_guides") ?? (locale === "zh" ? "训练指南" : "Training Guides")),
+          shippingReturns: String(getValue(localeUiCopy, "ui.site.footer.shipping_returns") ?? (locale === "zh" ? "配送与退货" : "Shipping & Returns")),
+          about: String(getValue(localeUiCopy, "ui.site.footer.about") ?? (locale === "zh" ? "关于我们" : "About")),
+        },
+      },
       ui: {
-        aiDraftBadge: String(getValue(config.uiCopy, "ui.admin.seo.ai_draft_badge") ?? "AI Draft"),
-        notConnected: String(getValue(config.uiCopy, "ui.admin.seo.not_connected") ?? "Not Connected"),
-        applyConfirmTitle: String(getValue(config.uiCopy, "ui.admin.seo.apply_confirm_title") ?? "Apply this draft to live data?"),
+        aiDraftBadge: String(getValue(localeUiCopy, "ui.admin.seo.ai_draft_badge") ?? (locale === "zh" ? "AI 草稿" : "AI Draft")),
+        notConnected: String(getValue(localeUiCopy, "ui.admin.seo.not_connected") ?? (locale === "zh" ? "未连接" : "Not Connected")),
+        applyConfirmTitle: String(getValue(localeUiCopy, "ui.admin.seo.apply_confirm_title") ?? (locale === "zh" ? "确认将此草稿应用到正式数据吗？" : "Apply this draft to live data?")),
       },
       seo: {
         productTitleTemplate: String(getTemplate(config.contentTemplates, "template.seo.product.title") ?? "{{title}} | PulseGear"),
@@ -301,6 +393,13 @@ function mapPublicSettings(settings: {
 function mergeConfigItems(defaults: CopyConfigItem[], current: CopyConfigItem[]) {
   const currentMap = new Map(current.map((item) => [item.key, item]));
   return defaults.map((item) => currentMap.get(item.key) ?? item);
+}
+
+function mergeLocalizedConfigItems(defaults: LocalizedCopyConfig<CopyConfigItem>, current: LocalizedCopyConfig<CopyConfigItem>) {
+  return {
+    en: mergeConfigItems(defaults.en, current.en),
+    zh: mergeConfigItems(defaults.zh, current.zh),
+  };
 }
 
 function mergeTemplateItems(defaults: TemplateConfigItem[], current: TemplateConfigItem[]) {

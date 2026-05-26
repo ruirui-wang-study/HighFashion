@@ -1,0 +1,3 @@
+product_name,supplier_name,supplier_url,platform,moq,sample_price,unit_price,shipping_to_us,shipping_to_uk,lead_time_days,custom_logo_moq,custom_packaging_moq,trade_assurance,verified_supplier,certifications,notes
+PulseBand Sweat Guard,Ningbo Motion Textile,https://www.alibaba.com/product-detail/example-1,ALIBABA,200,250,145,60,75,12,500,1000,true,true,"BSCI|OEKO-TEX","supports custom logo"
+CoreCarry Hydration Belt,Yiwu Sport Gear,https://www.alibaba.com/product-detail/example-2,ALIBABA,150,400,520,120,140,15,300,800,true,true,"ISO9001","request leak-proof bladder spec"

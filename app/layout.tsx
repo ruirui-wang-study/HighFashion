@@ -11,7 +11,7 @@ import { getPublicStorefrontSettings } from "@/lib/storefront-settings";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const siteCopy = await getSiteCopySnapshot();
+  const siteCopy = await getSiteCopySnapshot("en");
   return {
     metadataBase: new URL(await getRuntimeSiteUrl()),
     title: `${siteCopy.site.brandName || siteName} | Lightweight Support and Carry Essentials`,
@@ -22,16 +22,21 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const headerStore = await headers();
   const cookieStore = await cookies();
+  const initialLocale = normalizeLocale(cookieStore.get(localeCookieName)?.value);
   const pathname = headerStore.get("x-pulsegear-pathname") ?? "";
   const isAdminRoute = pathname.startsWith("/admin");
   const storefrontSettings = isAdminRoute ? null : await getPublicStorefrontSettings();
-  const siteCopy = isAdminRoute ? null : await getSiteCopySnapshot();
-  const initialLocale = normalizeLocale(cookieStore.get(localeCookieName)?.value);
+  const siteCopyByLocale = isAdminRoute
+    ? undefined
+    : {
+        en: await getSiteCopySnapshot("en"),
+        zh: await getSiteCopySnapshot("zh"),
+      };
 
   return (
     <html lang={initialLocale === "zh" ? "zh-CN" : "en"}>
       <body>
-        <LocaleProvider initialLocale={initialLocale}>
+        <LocaleProvider initialLocale={initialLocale} siteCopyByLocale={siteCopyByLocale}>
           {isAdminRoute ? (
             children
           ) : (
@@ -39,11 +44,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <SiteHeader />
               <main>{children}</main>
               <SiteFooter
-                brandName={siteCopy?.site.brandName}
+                brandName={siteCopyByLocale?.[initialLocale]?.site.brandName}
                 supportEmail={storefrontSettings?.supportEmail}
                 returnsPolicyUrl={storefrontSettings?.returnsPolicyUrl}
-                shippingCopy={siteCopy?.site.shippingCopy}
-                returnsCopy={siteCopy?.site.returnsCopy}
+                shippingCopy={siteCopyByLocale?.[initialLocale]?.site.shippingCopy}
+                returnsCopy={siteCopyByLocale?.[initialLocale]?.site.returnsCopy}
               />
             </CartProvider>
           )}

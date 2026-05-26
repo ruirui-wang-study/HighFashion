@@ -3,6 +3,10 @@ import { Type } from "class-transformer";
 
 export class ProductQueryDto {
   @IsOptional()
+  @IsIn(["en", "zh"])
+  locale?: "en" | "zh";
+
+  @IsOptional()
   @IsString()
   category?: string;
 

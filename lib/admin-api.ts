@@ -1,5 +1,5 @@
 import type { AdminDashboardAnalytics, AdminFunnelAnalytics, AdminProductAnalytics, AdminSalesAnalytics, AnalyticsRangeDays } from "./admin-analytics-types";
-import type { AdminFaq, AdminFaqPayload, AdminGuide, AdminGuidePayload } from "./admin-content-types";
+import type { AdminCollectionLanding, AdminCollectionLandingPayload, AdminFaq, AdminFaqPayload, AdminGuide, AdminGuidePayload, AdminStaticPage, AdminStaticPagePayload } from "./admin-content-types";
 import type { AdminMerchantFeedExport, AdminMerchantFeedOverview } from "./admin-marketing-types";
 import type { AdminOrderDetail, AdminOrderListItem } from "./admin-orders-types";
 import type { AdminCopyConfig, AdminSettings, AdminSettingsInput } from "./admin-settings-types";
@@ -17,6 +17,17 @@ import type {
   SearchConsoleSyncResult,
 } from "./seo-automation-types";
 import type { AdminInventoryItem, AdminProduct, AdminProductPayload } from "./admin-types";
+import type {
+  ProductResearchCandidateDetail,
+  ProductResearchCandidateListItem,
+  ProductResearchDashboard,
+  ProductResearchDecisionListItem,
+  ProductResearchImportBatch,
+  ProductResearchImportPreview,
+  ProductResearchScoringRule,
+  ProductResearchSupplier,
+  ProductResearchTestLaunch,
+} from "./product-research-types";
 
 type ApiResponse<T> = { success: true; data: T } | { success: false; error: { code: string; message: string } };
 
@@ -155,6 +166,36 @@ export function updateAdminFaq(payload: AdminFaqPayload) {
   });
 }
 
+export function getAdminCollectionLandings() {
+  return adminApiFetch<AdminCollectionLanding[]>("/api/admin/content/collections");
+}
+
+export function getAdminCollectionLanding(id: string) {
+  return adminApiFetch<AdminCollectionLanding>(`/api/admin/content/collections/${id}`);
+}
+
+export function updateAdminCollectionLanding(id: string, payload: AdminCollectionLandingPayload) {
+  return adminApiFetch<AdminCollectionLanding>(`/api/admin/content/collections/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminStaticPages() {
+  return adminApiFetch<AdminStaticPage[]>("/api/admin/content/static-pages");
+}
+
+export function getAdminStaticPage(id: string) {
+  return adminApiFetch<AdminStaticPage>(`/api/admin/content/static-pages/${id}`);
+}
+
+export function updateAdminStaticPage(id: string, payload: AdminStaticPagePayload) {
+  return adminApiFetch<AdminStaticPage>(`/api/admin/content/static-pages/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getAdminMerchantFeed() {
   return adminApiFetch<AdminMerchantFeedOverview>("/api/admin/marketing/merchant-feed");
 }
@@ -214,6 +255,239 @@ export function updateAdminCopyConfig(payload: Omit<AdminCopyConfig, "updatedAt"
 
 export function getSeoAutomationOverview() {
   return adminApiFetch<SeoAutomationOverview>("/api/admin/seo/automation/overview");
+}
+
+export function getProductResearchDashboard() {
+  return adminApiFetch<ProductResearchDashboard>("/api/admin/product-research/dashboard");
+}
+
+export function getProductResearchCandidates(query: {
+  search?: string;
+  status?: string;
+  source?: string;
+  category?: string;
+  targetMarket?: string;
+  recommendedAction?: string;
+  riskSeverity?: string;
+  sort?: string;
+} = {}) {
+  return adminApiFetch<ProductResearchCandidateListItem[]>(`/api/admin/product-research/candidates${toQueryString(query)}`);
+}
+
+export function getProductResearchCandidate(id: string) {
+  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${id}`);
+}
+
+export function recalculateProductResearchCandidate(id: string) {
+  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${id}/recalculate`, {
+    method: "POST",
+  });
+}
+
+export function bulkRecalculateProductResearchCandidates(ids: string[], reason?: string) {
+  return adminApiFetch<{ recalculated: number }>("/api/admin/product-research/candidates/bulk-recalculate", {
+    method: "POST",
+    body: JSON.stringify({ ids, reason }),
+  });
+}
+
+export function createProductResearchCandidate(payload: {
+  productName: string;
+  category: string;
+  targetMarket: string;
+  source?: "MANUAL" | "AI_GENERATED" | "CSV" | "ALIBABA_LINK" | "SUPPLIER_QUOTE";
+  chineseName?: string;
+  targetAudience?: string;
+  useCase?: string;
+  description?: string;
+  notes?: string;
+  brandAngle?: string;
+  positioningSummary?: string;
+  alibabaKeywords?: string;
+  sourceUrl?: string;
+}) {
+  return adminApiFetch<ProductResearchCandidateDetail>("/api/admin/product-research/candidates", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createProductResearchDecision(id: string, payload: { decision: string; reason?: string }) {
+  return adminApiFetch<{ id: string; decision: string }>(`/api/admin/product-research/candidates/${id}/decisions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adjustProductResearchScore(id: string, payload: { finalScore: number; reason?: string }) {
+  return adminApiFetch<{ id: string; finalScore: number }>(`/api/admin/product-research/candidates/${id}/score-adjust`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createProductResearchTestLaunch(id: string, payload: {
+  channel: string;
+  landingPageUrl?: string;
+  channelDetail?: string;
+  adSpendCents?: number;
+  impressions?: number;
+  clicks?: number;
+  productViews?: number;
+  addToCart?: number;
+  beginCheckout?: number;
+  purchases?: number;
+  revenueCents?: number;
+  refunds?: number;
+  customerFeedbackScore?: number;
+  refundRiskScore?: number;
+  customerFeedbackSummary?: string;
+  status?: string;
+  notes?: string;
+}) {
+  return adminApiFetch<ProductResearchTestLaunch>(`/api/admin/product-research/candidates/${id}/test-launches`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function convertProductResearchCandidate(id: string) {
+  return adminApiFetch<{ candidateId: string; productId: string; status: string }>(`/api/admin/product-research/candidates/${id}/convert-to-product`, {
+    method: "POST",
+  });
+}
+
+export function getProductResearchSuppliers() {
+  return adminApiFetch<ProductResearchSupplier[]>("/api/admin/product-research/suppliers");
+}
+
+export function getProductResearchScoringRules() {
+  return adminApiFetch<ProductResearchScoringRule[]>("/api/admin/product-research/scoring-rules");
+}
+
+export function createProductResearchScoringRule(payload: { version: string; weights: Record<string, number>; isActive?: boolean }) {
+  return adminApiFetch<ProductResearchScoringRule>("/api/admin/product-research/scoring-rules", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function activateProductResearchScoringRule(id: string) {
+  return adminApiFetch<ProductResearchScoringRule>(`/api/admin/product-research/scoring-rules/${id}/activate`, {
+    method: "POST",
+  });
+}
+
+export function getProductResearchImportBatches() {
+  return adminApiFetch<ProductResearchImportBatch[]>("/api/admin/product-research/import/batches");
+}
+
+export function previewProductResearchAiImport(payload: {
+  brandDirection?: string;
+  targetMarket?: string;
+  excludedCategories?: string[];
+  count?: number;
+}) {
+  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/ai/preview", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function commitProductResearchAiImport(payload: {
+  previewItems: Array<Record<string, unknown>>;
+  selectedIndexes: number[];
+}) {
+  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+    "/api/admin/product-research/import/ai/commit",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function previewProductResearchCsvImport(payload: {
+  fileName?: string;
+  rows: Array<Record<string, unknown>>;
+  mapping?: Record<string, string>;
+}) {
+  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/csv/preview", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function commitProductResearchCsvImport(payload: {
+  batchId?: string;
+  rows: Array<Record<string, unknown>>;
+  action?: "merge" | "skip" | "create_anyway";
+}) {
+  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+    "/api/admin/product-research/import/csv/commit",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function previewProductResearchSupplierQuoteImport(payload: {
+  fileName?: string;
+  rows: Array<Record<string, unknown>>;
+  mapping?: Record<string, string>;
+}) {
+  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/supplier-quotes/preview", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function commitProductResearchSupplierQuoteImport(payload: {
+  batchId?: string;
+  rows: Array<Record<string, unknown>>;
+  action?: "merge" | "skip" | "create_anyway";
+}) {
+  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number }>(
+    "/api/admin/product-research/import/supplier-quotes/commit",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function previewProductResearchAlibabaImport(payload: { links: string[]; notes?: string }) {
+  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/alibaba-links/preview", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function commitProductResearchAlibabaImport(payload: {
+  previewItems: Array<Record<string, unknown>>;
+  selectedIndexes: number[];
+  notes?: string;
+}) {
+  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+    "/api/admin/product-research/import/alibaba-links/commit",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function getProductResearchDecisions() {
+  return adminApiFetch<ProductResearchDecisionListItem[]>("/api/admin/product-research/decisions");
+}
+
+export function getProductResearchTestLaunches() {
+  return adminApiFetch<ProductResearchTestLaunch[]>("/api/admin/product-research/test-launches");
+}
+
+export function getProductResearchRiskReview() {
+  return adminApiFetch<ProductResearchCandidateListItem[]>("/api/admin/product-research/risk-review");
 }
 
 export function runSeoHealthCheck() {

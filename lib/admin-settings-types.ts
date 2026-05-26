@@ -29,9 +29,14 @@ export type TemplateConfigItem = {
   status?: string;
 };
 
+export type LocalizedCopyConfig<T> = {
+  en: T[];
+  zh: T[];
+};
+
 export type AdminCopyConfig = {
   siteSettings: CopyConfigItem[];
-  uiCopy: CopyConfigItem[];
+  uiCopy: LocalizedCopyConfig<CopyConfigItem>;
   contentTemplates: TemplateConfigItem[];
   seoRules: CopyConfigItem[];
   updatedAt: string;
@@ -42,6 +47,33 @@ export type PublicSiteCopySnapshot = {
     brandName: string;
     shippingCopy: string;
     returnsCopy: string;
+  };
+  storefront: {
+    languageLabel: string;
+    languageEn: string;
+    languageZh: string;
+    promo: string;
+    openCart: string;
+    openMenu: string;
+    nav: {
+      shop: string;
+      run: string;
+      train: string;
+      court: string;
+      guides: string;
+      fitGuide: string;
+    };
+    footer: {
+      description: string;
+      newsletterPlaceholder: string;
+      join: string;
+      shop: string;
+      support: string;
+      allGear: string;
+      trainingGuides: string;
+      shippingReturns: string;
+      about: string;
+    };
   };
   ui: {
     aiDraftBadge: string;

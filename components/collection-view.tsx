@@ -3,6 +3,7 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useLocale } from "@/components/locale-provider";
 import type { Product } from "@/lib/types";
 import { getProducts } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,37 @@ const categories = ["Support", "Carry", "Hydration", "Socks", "Sweat", "Recovery
 const useCases = ["Run", "Train", "Court", "Recovery"];
 const sizes = ["S", "M", "L", "XL", "S/M", "M/L", "L/XL", "One size", "22 oz"];
 const colors = ["Graphite", "Steel", "Lime", "Signal Blue", "White"];
+
+const copy = {
+  en: {
+    filters: "Filters",
+    products: "products",
+    sortBest: "Best selling",
+    sortNewest: "Newest",
+    sortPriceAsc: "Price low to high",
+    sortPriceDesc: "Price high to low",
+    category: "Category",
+    useCase: "Use case",
+    size: "Size",
+    color: "Color",
+    all: "All",
+    priceUpTo: "Price up to",
+  },
+  zh: {
+    filters: "筛选",
+    products: "件商品",
+    sortBest: "热销优先",
+    sortNewest: "最新上架",
+    sortPriceAsc: "价格从低到高",
+    sortPriceDesc: "价格从高到低",
+    category: "品类",
+    useCase: "使用场景",
+    size: "尺码",
+    color: "颜色",
+    all: "全部",
+    priceUpTo: "价格上限",
+  },
+} as const;
 
 export function CollectionView({
   initialUseCase,
@@ -32,6 +64,8 @@ export function CollectionView({
   lockCategory?: boolean;
   lockUseCase?: boolean;
 }) {
+  const { locale } = useLocale();
+  const content = copy[locale];
   const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -99,10 +133,10 @@ export function CollectionView({
       <aside className="hidden lg:block">{filters}</aside>
       <div>
         <div className="mb-6 flex items-center justify-between gap-3">
-          <Button variant="outline" className="lg:hidden" onClick={() => setDrawerOpen(true)}><SlidersHorizontal className="h-4 w-4" /> Filters</Button>
-          <p className="text-sm font-bold text-muted">{products.length} products</p>
+          <Button variant="outline" className="lg:hidden" onClick={() => setDrawerOpen(true)}><SlidersHorizontal className="h-4 w-4" /> {content.filters}</Button>
+          <p className="text-sm font-bold text-muted">{products.length} {content.products}</p>
           <select className="rounded-full border border-graphite/10 bg-white px-4 py-3 text-sm font-bold" value={sort} onChange={(event) => setSort(event.target.value)}>
-            <option value="best">Best selling</option><option value="newest">Newest</option><option value="price-asc">Price low to high</option><option value="price-desc">Price high to low</option>
+            <option value="best">{content.sortBest}</option><option value="newest">{content.sortNewest}</option><option value="price-asc">{content.sortPriceAsc}</option><option value="price-desc">{content.sortPriceDesc}</option>
           </select>
         </div>
         {error ? <div className="rounded-3xl bg-white p-6 font-bold text-muted">{error}</div> : null}
@@ -111,7 +145,7 @@ export function CollectionView({
       {drawerOpen ? (
         <div className="fixed inset-0 z-50 bg-graphite/50 lg:hidden">
           <div className="ml-auto h-full w-[86%] overflow-y-auto bg-warm p-5">
-            <div className="mb-5 flex items-center justify-between"><p className="font-display text-3xl font-black uppercase">Filters</p><button onClick={() => setDrawerOpen(false)}><X /></button></div>
+            <div className="mb-5 flex items-center justify-between"><p className="font-display text-3xl font-black uppercase">{content.filters}</p><button onClick={() => setDrawerOpen(false)}><X /></button></div>
             {filters}
           </div>
         </div>
@@ -125,19 +159,23 @@ function Filters(props: {
   lockCategory: boolean;
   lockUseCase: boolean;
 }) {
+  const { locale } = useLocale();
+  const content = copy[locale];
   return (
     <div className="rounded-[1.75rem] border border-graphite/10 bg-white p-5">
-      {!props.lockCategory ? <FilterGroup title="Category" values={categories} value={props.category} setValue={props.setCategory} /> : null}
-      {!props.lockUseCase ? <FilterGroup title="Use case" values={useCases} value={props.useCase} setValue={props.setUseCase} /> : null}
-      <FilterGroup title="Size" values={sizes} value={props.size} setValue={props.setSize} />
-      <FilterGroup title="Color" values={colors} value={props.color} setValue={props.setColor} />
-      <div className="mt-6 border-t border-graphite/10 pt-5"><p className="text-xs font-bold uppercase tracking-[0.18em]">Price up to ${(props.maxPrice / 100).toFixed(0)}</p><input className="mt-4 w-full accent-lime" type="range" min="2000" max="6000" step="100" value={props.maxPrice} onChange={(event) => props.setMaxPrice(Number(event.target.value))} /></div>
+      {!props.lockCategory ? <FilterGroup title={content.category} values={categories} value={props.category} setValue={props.setCategory} /> : null}
+      {!props.lockUseCase ? <FilterGroup title={content.useCase} values={useCases} value={props.useCase} setValue={props.setUseCase} /> : null}
+      <FilterGroup title={content.size} values={sizes} value={props.size} setValue={props.setSize} />
+      <FilterGroup title={content.color} values={colors} value={props.color} setValue={props.setColor} />
+      <div className="mt-6 border-t border-graphite/10 pt-5"><p className="text-xs font-bold uppercase tracking-[0.18em]">{content.priceUpTo} ${(props.maxPrice / 100).toFixed(0)}</p><input className="mt-4 w-full accent-lime" type="range" min="2000" max="6000" step="100" value={props.maxPrice} onChange={(event) => props.setMaxPrice(Number(event.target.value))} /></div>
     </div>
   );
 }
 
 function FilterGroup({ title, values, value, setValue }: { title: string; values: string[]; value: string; setValue: (value: string) => void }) {
+  const { locale } = useLocale();
+  const content = copy[locale];
   return (
-    <div className="border-b border-graphite/10 py-5 first:pt-0 last:border-0"><p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]">{title}</p><div className="flex flex-wrap gap-2"><button onClick={() => setValue("")} className={`rounded-full px-3 py-2 text-xs font-bold ${value === "" ? "bg-lime" : "bg-warm"}`}>All</button>{values.map((item) => <button key={item} onClick={() => setValue(item)} className={`rounded-full px-3 py-2 text-xs font-bold ${value === item ? "bg-lime" : "bg-warm"}`}>{item}</button>)}</div></div>
+    <div className="border-b border-graphite/10 py-5 first:pt-0 last:border-0"><p className="mb-3 text-xs font-bold uppercase tracking-[0.18em]">{title}</p><div className="flex flex-wrap gap-2"><button onClick={() => setValue("")} className={`rounded-full px-3 py-2 text-xs font-bold ${value === "" ? "bg-lime" : "bg-warm"}`}>{content.all}</button>{values.map((item) => <button key={item} onClick={() => setValue(item)} className={`rounded-full px-3 py-2 text-xs font-bold ${value === item ? "bg-lime" : "bg-warm"}`}>{item}</button>)}</div></div>
   );
 }

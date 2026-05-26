@@ -10,6 +10,7 @@ import { AdminMarketingModule } from "./admin-marketing/admin-marketing.module";
 import { AdminOrdersModule } from "./admin-orders/admin-orders.module";
 import { AdminSettingsModule } from "./admin-settings/admin-settings.module";
 import { SeoAutomationModule } from "./seo-automation/seo-automation.module";
+import { ProductResearchModule } from "./product-research/product-research.module";
 import { ProductsModule } from "./products/products.module";
 import { CollectionsModule } from "./collections/collections.module";
 import { CheckoutModule } from "./checkout/checkout.module";
@@ -29,6 +30,7 @@ import { HealthModule } from "./health/health.module";
     AdminOrdersModule,
     AdminSettingsModule,
     SeoAutomationModule,
+    ProductResearchModule,
     ProductsModule,
     CollectionsModule,
     CheckoutModule,

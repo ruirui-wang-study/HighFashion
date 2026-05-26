@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { adjustAdminInventory, getAdminInventory } from "@/lib/admin-api";
+import { useLocale } from "@/components/locale-provider";
 import type { AdminInventoryItem } from "@/lib/admin-types";
 import { AdminPageHeader } from "./admin-page-header";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ function inventoryTone(level: AdminInventoryItem["inventoryLevel"]) {
 }
 
 export function AdminInventoryPageClient() {
+  const { messages } = useLocale();
+  const copy = messages.admin.inventory;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [stock, setStock] = useState("");
@@ -36,7 +39,7 @@ export function AdminInventoryPageClient() {
         setError(null);
       })
       .catch((nextError) => {
-        setError(nextError instanceof Error ? nextError.message : "Failed to load inventory");
+        setError(nextError instanceof Error ? nextError.message : copy.loadFailed);
       })
       .finally(() => setLoading(false));
   }
@@ -51,7 +54,7 @@ export function AdminInventoryPageClient() {
       })
       .catch((nextError) => {
         if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : "Failed to load inventory");
+        setError(nextError instanceof Error ? nextError.message : copy.loadFailed);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -59,7 +62,7 @@ export function AdminInventoryPageClient() {
     return () => {
       active = false;
     };
-  }, [search, category, stock]);
+  }, [search, category, stock, copy.loadFailed]);
 
   async function submitAdjustment(item: AdminInventoryItem) {
     const draft = drafts[item.id];
@@ -75,7 +78,7 @@ export function AdminInventoryPageClient() {
       setDrafts((current) => ({ ...current, [item.id]: { quantityDelta: "", reason: "" } }));
       load();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Failed to adjust inventory");
+      setError(nextError instanceof Error ? nextError.message : copy.adjustFailed);
     } finally {
       setPendingId(null);
     }
@@ -83,35 +86,35 @@ export function AdminInventoryPageClient() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Operations" title="Inventory" body="Monitor all active and inactive SKUs, filter low stock, and record manual stock corrections with a reason." />
+      <AdminPageHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
       <section className="rounded-3xl bg-white p-5">
         <div className="grid gap-3 md:grid-cols-3">
-          <input value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder="Search SKU, product, color, size" className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none" />
+          <input value={search} onChange={(event) => updateFilter(setSearch, event.target.value)} placeholder={copy.searchPlaceholder} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none" />
           <select value={category} onChange={(event) => updateFilter(setCategory, event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
-            <option value="">All categories</option>
+            <option value="">{copy.filters.allCategories}</option>
             {categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
           <select value={stock} onChange={(event) => updateFilter(setStock, event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
-            <option value="">All stock</option>
-            <option value="low">Low stock</option>
-            <option value="out">Out of stock</option>
-            <option value="in">In stock</option>
+            <option value="">{copy.filters.allStock}</option>
+            <option value="low">{copy.filters.lowStock}</option>
+            <option value="out">{copy.filters.outOfStock}</option>
+            <option value="in">{copy.filters.inStock}</option>
           </select>
         </div>
         {error ? <p className="mt-4 text-sm font-bold text-red-600">{error}</p> : null}
-        {loading ? <p className="mt-6 text-sm text-muted">Loading inventory...</p> : null}
+        {loading ? <p className="mt-6 text-sm text-muted">{copy.loading}</p> : null}
         {!loading ? (
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-graphite/10 text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                  <th className="px-3 py-3">SKU</th>
-                  <th className="px-3 py-3">Product</th>
-                  <th className="px-3 py-3">Category</th>
-                  <th className="px-3 py-3">Stock</th>
-                  <th className="px-3 py-3">Threshold</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Adjust</th>
+                  <th className="px-3 py-3">{copy.table.sku}</th>
+                  <th className="px-3 py-3">{copy.table.product}</th>
+                  <th className="px-3 py-3">{copy.table.category}</th>
+                  <th className="px-3 py-3">{copy.table.stock}</th>
+                  <th className="px-3 py-3">{copy.table.threshold}</th>
+                  <th className="px-3 py-3">{copy.table.status}</th>
+                  <th className="px-3 py-3">{copy.table.adjust}</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,13 +140,13 @@ export function AdminInventoryPageClient() {
                           type="number"
                           value={drafts[item.id]?.quantityDelta ?? ""}
                           onChange={(event) => setDrafts((current) => ({ ...current, [item.id]: { quantityDelta: event.target.value, reason: current[item.id]?.reason ?? "" } }))}
-                          placeholder="+/- qty"
+                          placeholder={copy.quantityPlaceholder}
                           className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none"
                         />
                         <input
                           value={drafts[item.id]?.reason ?? ""}
                           onChange={(event) => setDrafts((current) => ({ ...current, [item.id]: { quantityDelta: current[item.id]?.quantityDelta ?? "", reason: event.target.value } }))}
-                          placeholder="Reason"
+                          placeholder={copy.reasonPlaceholder}
                           className="rounded-2xl border border-graphite/10 px-4 py-3 outline-none"
                         />
                         <Button
@@ -152,7 +155,7 @@ export function AdminInventoryPageClient() {
                           disabled={pendingId === item.id || !drafts[item.id]?.quantityDelta || !drafts[item.id]?.reason}
                           onClick={() => submitAdjustment(item)}
                         >
-                          {pendingId === item.id ? "Saving" : "Apply"}
+                          {pendingId === item.id ? messages.admin.common.saving : copy.apply}
                         </Button>
                       </div>
                     </td>
@@ -160,7 +163,7 @@ export function AdminInventoryPageClient() {
                 ))}
               </tbody>
             </table>
-            {!items.length ? <p className="px-3 py-8 text-sm text-muted">No SKUs match the current filters.</p> : null}
+            {!items.length ? <p className="px-3 py-8 text-sm text-muted">{copy.noSkus}</p> : null}
           </div>
         ) : null}
       </section>

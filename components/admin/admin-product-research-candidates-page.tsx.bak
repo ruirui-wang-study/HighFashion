@@ -1,0 +1,113 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getProductResearchCandidates } from "@/lib/admin-api";
+import type { ProductResearchCandidateListItem } from "@/lib/product-research-types";
+import { AdminProductResearchSectionShell } from "./admin-product-research-section-shell";
+import { Button } from "@/components/ui/button";
+
+export function AdminProductResearchCandidatesPageClient() {
+  const [items, setItems] = useState<ProductResearchCandidateListItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("created-desc");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getProductResearchCandidates({ search: search || undefined, status: status || undefined, sort })
+      .then((result) => {
+        if (!active) return;
+        setItems(result);
+        setError(null);
+      })
+      .catch((nextError) => {
+        if (!active) return;
+        setError(nextError instanceof Error ? nextError.message : "Failed to load candidates");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [search, sort, status]);
+
+  function patchSearch(value: string) {
+    setLoading(true);
+    setSearch(value);
+  }
+
+  function patchStatus(value: string) {
+    setLoading(true);
+    setStatus(value);
+  }
+
+  function patchSort(value: string) {
+    setLoading(true);
+    setSort(value);
+  }
+
+  return (
+    <AdminProductResearchSectionShell eyebrow="Research" title="Candidates" body="Screen candidate products before spend, sample requests, or formal merchandising work. Convert stays disabled until approval and risk review are complete.">
+      <section className="grid gap-3 rounded-3xl bg-white p-6 xl:grid-cols-[1.4fr_.8fr_.8fr_auto]">
+        <input value={search} onChange={(event) => patchSearch(event.target.value)} placeholder="Search candidate name or keywords" className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none" />
+        <select value={status} onChange={(event) => patchStatus(event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
+          <option value="">All statuses</option>
+          <option value="NEW">NEW</option>
+          <option value="RESEARCHING">RESEARCHING</option>
+          <option value="WATCH">WATCH</option>
+          <option value="SAMPLE">SAMPLE</option>
+          <option value="TEST">TEST</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="HIGH_RISK_REVIEW">HIGH_RISK_REVIEW</option>
+        </select>
+        <select value={sort} onChange={(event) => patchSort(event.target.value)} className="rounded-2xl border border-graphite/10 px-4 py-3 text-sm outline-none">
+          <option value="created-desc">Newest first</option>
+          <option value="created-asc">Oldest first</option>
+          <option value="score-desc">Highest score</option>
+          <option value="score-asc">Lowest score</option>
+        </select>
+        <Button asChild variant="lime"><Link href="/admin/product-research/candidates/new">New Candidate</Link></Button>
+      </section>
+      {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
+      {loading ? <section className="rounded-3xl bg-white p-6 text-sm text-muted">Loading candidates...</section> : null}
+      {!loading ? (
+        <section className="rounded-3xl bg-white p-6">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-graphite/10 text-xs font-bold uppercase tracking-[0.12em] text-muted">
+                  <th className="px-3 py-3">Product</th>
+                  <th className="px-3 py-3">Market</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Action</th>
+                  <th className="px-3 py-3">Score</th>
+                  <th className="px-3 py-3">Risk</th>
+                  <th className="px-3 py-3">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 ? <tr><td colSpan={7} className="px-3 py-8 text-center text-muted">No product research candidates yet.</td></tr> : null}
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b border-graphite/5">
+                    <td className="px-3 py-4"><Link href={`/admin/product-research/candidates/${item.id}`} className="font-bold text-graphite hover:text-signal">{item.productName}</Link><p className="mt-1 text-xs text-muted">{item.category} · {item.source}</p></td>
+                    <td className="px-3 py-4 text-muted">{item.targetMarket}</td>
+                    <td className="px-3 py-4 text-muted">{item.status}</td>
+                    <td className="px-3 py-4"><span className="rounded-full bg-lime/30 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-graphite">{item.recommendedActionLabel}</span></td>
+                    <td className="px-3 py-4 text-muted">{item.finalScore ?? "-"}</td>
+                    <td className="px-3 py-4 text-muted">{item.primaryRiskSeverity}</td>
+                    <td className="px-3 py-4 text-muted">{new Date(item.updatedAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+    </AdminProductResearchSectionShell>
+  );
+}

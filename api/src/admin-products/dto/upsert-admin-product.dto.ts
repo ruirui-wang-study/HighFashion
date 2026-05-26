@@ -81,6 +81,14 @@ export class UpsertAdminProductDto {
   @IsString()
   title!: string;
 
+  @IsOptional()
+  @IsString()
+  titleEn?: string | null;
+
+  @IsOptional()
+  @IsString()
+  titleZh?: string | null;
+
   @IsString()
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   slug!: string;
@@ -91,8 +99,24 @@ export class UpsertAdminProductDto {
   @IsString()
   shortDescription!: string;
 
+  @IsOptional()
+  @IsString()
+  shortDescriptionEn?: string | null;
+
+  @IsOptional()
+  @IsString()
+  shortDescriptionZh?: string | null;
+
   @IsString()
   description!: string;
+
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string | null;
+
+  @IsOptional()
+  @IsString()
+  descriptionZh?: string | null;
 
   @IsOptional()
   @IsString()
@@ -100,7 +124,23 @@ export class UpsertAdminProductDto {
 
   @IsOptional()
   @IsString()
+  seoTitleEn?: string | null;
+
+  @IsOptional()
+  @IsString()
+  seoTitleZh?: string | null;
+
+  @IsOptional()
+  @IsString()
   seoDescription?: string | null;
+
+  @IsOptional()
+  @IsString()
+  seoDescriptionEn?: string | null;
+
+  @IsOptional()
+  @IsString()
+  seoDescriptionZh?: string | null;
 
   @IsOptional()
   @IsString()
@@ -118,9 +158,29 @@ export class UpsertAdminProductDto {
   @IsString({ each: true })
   benefits!: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  benefitsEn?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  benefitsZh?: string[];
+
   @IsArray()
   @IsString({ each: true })
   features!: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  featuresEn?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  featuresZh?: string[];
 
   @IsArray()
   @IsString({ each: true })

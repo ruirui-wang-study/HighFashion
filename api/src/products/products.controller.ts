@@ -13,7 +13,7 @@ export class ProductsController {
   }
 
   @Get(":slug")
-  async findBySlug(@Param("slug") slug: string) {
-    return ok(await this.productsService.findBySlug(slug));
+  async findBySlug(@Param("slug") slug: string, @Query() query: ProductQueryDto) {
+    return ok(await this.productsService.findBySlug(slug, query.locale));
   }
 }

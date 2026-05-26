@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Put, Query, Req, UseGuards } from "@nestjs/common";
 import type { AdminRoleName } from "@prisma/client";
 import type { Request } from "express";
 import { AdminAuthGuard } from "../admin-auth/admin-auth.guard";
@@ -36,8 +36,8 @@ export class AdminSettingsController {
   }
 
   @Get("public-copy")
-  async getPublicSiteCopySnapshot() {
-    return ok(await this.adminSettingsService.getPublicSiteCopySnapshot());
+  async getPublicSiteCopySnapshot(@Query("locale") locale?: string) {
+    return ok(await this.adminSettingsService.getPublicSiteCopySnapshot(locale === "zh" ? "zh" : "en"));
   }
 
   @Put()
@@ -58,7 +58,10 @@ export class AdminSettingsController {
       { adminId: request.adminSession!.sub, adminEmail: request.adminSession!.email },
       {
         siteSettings: body.siteSettings.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })),
-        uiCopy: body.uiCopy.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })),
+        uiCopy: {
+          en: body.uiCopy.en.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })),
+          zh: body.uiCopy.zh.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })),
+        },
         contentTemplates: body.contentTemplates.map((item) => ({ key: item.key, name: item.name, value: item.value, status: item.status })),
         seoRules: body.seoRules.map((item) => ({ key: item.key, value: item.value as string | number | boolean | null })),
       },

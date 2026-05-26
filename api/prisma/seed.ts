@@ -245,16 +245,21 @@ async function main() {
     const created = await prisma.product.create({
       data: {
         title: product.title,
+        titleEn: product.title,
         slug: product.slug,
         category: product.category,
         shortDescription: product.shortDescription,
+        shortDescriptionEn: product.shortDescription,
         description: product.description,
+        descriptionEn: product.description,
         status: ProductStatus.ACTIVE,
         badge: product.badge,
         rating: product.rating,
         reviewCount: product.reviewCount,
         benefits: product.benefits,
+        benefitsEn: product.benefits,
         features: product.features,
+        featuresEn: product.features,
         useCases: product.useCases,
         bundleEligible: product.bundleEligible,
         images: {

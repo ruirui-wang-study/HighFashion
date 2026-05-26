@@ -5,7 +5,9 @@ import { AdminAuthGuard } from "../admin-auth/admin-auth.guard";
 import { AdminRoles } from "../admin-auth/admin-roles.decorator";
 import { ok } from "../common/api-response";
 import { AdminContentService } from "./admin-content.service";
+import { UpdateCollectionLandingDto } from "./dto/update-collection-landing.dto";
 import { UpdateFaqDto } from "./dto/update-faq.dto";
+import { UpdateStaticPageDto } from "./dto/update-static-page.dto";
 import { UpsertGuideDto } from "./dto/upsert-guide.dto";
 
 type RequestWithAdmin = Request & {
@@ -89,6 +91,50 @@ export class AdminContentController {
       body,
     ));
   }
+
+  @Get("collections")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async listCollectionLandings() {
+    return ok(await this.adminContentService.listCollectionLandings());
+  }
+
+  @Get("collections/:id")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async getCollectionLanding(@Param("id") id: string) {
+    return ok(await this.adminContentService.getCollectionLandingById(id));
+  }
+
+  @Patch("collections/:id")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async updateCollectionLanding(@Req() request: RequestWithAdmin, @Param("id") id: string, @Body() body: UpdateCollectionLandingDto) {
+    return ok(await this.adminContentService.updateCollectionLanding(
+      id,
+      { adminId: request.adminSession!.sub, adminEmail: request.adminSession!.email },
+      body,
+    ));
+  }
+
+  @Get("static-pages")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async listStaticPages() {
+    return ok(await this.adminContentService.listStaticPages());
+  }
+
+  @Get("static-pages/:id")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async getStaticPage(@Param("id") id: string) {
+    return ok(await this.adminContentService.getStaticPageById(id));
+  }
+
+  @Patch("static-pages/:id")
+  @AdminRoles("CONTENT_EDITOR", "ADMIN", "SUPER_ADMIN")
+  async updateStaticPage(@Req() request: RequestWithAdmin, @Param("id") id: string, @Body() body: UpdateStaticPageDto) {
+    return ok(await this.adminContentService.updateStaticPage(
+      id,
+      { adminId: request.adminSession!.sub, adminEmail: request.adminSession!.email },
+      body,
+    ));
+  }
 }
 
 @Controller("content")
@@ -96,12 +142,33 @@ export class StorefrontContentController {
   constructor(private readonly adminContentService: AdminContentService) {}
 
   @Get("guides")
-  async listPublishedGuides() {
-    return ok(await this.adminContentService.listPublishedGuides());
+  async listPublishedGuides(@Query("locale") locale?: string) {
+    return ok(await this.adminContentService.listPublishedGuides(locale === "zh" ? "zh" : "en"));
   }
 
   @Get("guides/:slug")
-  async getPublishedGuideBySlug(@Param("slug") slug: string) {
-    return ok(await this.adminContentService.getPublishedGuideBySlug(slug));
+  async getPublishedGuideBySlug(@Param("slug") slug: string, @Query("locale") locale?: string) {
+    return ok(await this.adminContentService.getPublishedGuideBySlug(slug, locale === "zh" ? "zh" : "en"));
+  }
+
+  @Get("faq")
+  async getPublishedFaq(@Query("locale") locale?: string) {
+    return ok(await this.adminContentService.getPublishedFaq(locale === "zh" ? "zh" : "en"));
+  }
+
+  @Get("collections/by-path")
+  async getPublishedCollectionLandingByPathname(@Query("pathname") pathname?: string, @Query("locale") locale?: string) {
+    if (!pathname) {
+      return ok(null);
+    }
+    return ok(await this.adminContentService.getPublishedCollectionLandingByPathname(pathname, locale === "zh" ? "zh" : "en"));
+  }
+
+  @Get("static-pages/by-path")
+  async getPublishedStaticPageByPathname(@Query("pathname") pathname?: string, @Query("locale") locale?: string) {
+    if (!pathname) {
+      return ok(null);
+    }
+    return ok(await this.adminContentService.getPublishedStaticPageByPathname(pathname, locale === "zh" ? "zh" : "en"));
   }
 }

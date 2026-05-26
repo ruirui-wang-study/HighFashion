@@ -22,6 +22,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 export type ProductQuery = {
+  locale?: "en" | "zh";
   category?: string;
   useCase?: string;
   size?: string;
@@ -40,8 +41,9 @@ export async function getProducts(query: ProductQuery = {}) {
   return apiFetch<Product[]>(`/api/products${suffix}`);
 }
 
-export async function getProduct(slug: string) {
-  return apiFetch<Product>(`/api/products/${slug}`);
+export async function getProduct(slug: string, locale?: "en" | "zh") {
+  const suffix = locale ? `?locale=${locale}` : "";
+  return apiFetch<Product>(`/api/products/${slug}${suffix}`);
 }
 
 export async function createCheckoutSession(input: { items: Array<{ variantId: string; quantity: number }>; email?: string; country?: string; currency?: string }) {

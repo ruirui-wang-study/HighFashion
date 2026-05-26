@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AdminOrderDetailPageClient } from "@/components/admin/admin-order-detail-page";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { useLocale } from "@/components/locale-provider";
 import { getAdminOrder } from "@/lib/admin-api";
 import type { AdminOrderDetail } from "@/lib/admin-orders-types";
 
 export default function AdminOrderDetailRoute() {
+  const { messages } = useLocale();
+  const orderMessages = messages.admin.orderDetail;
   const params = useParams<{ id: string }>();
   const orderId = typeof params.id === "string" ? params.id : "";
   const [order, setOrder] = useState<AdminOrderDetail | null>(null);
@@ -25,7 +28,7 @@ export default function AdminOrderDetailRoute() {
       })
       .catch((nextError) => {
         if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : "Failed to load order");
+        setError(nextError instanceof Error ? nextError.message : orderMessages.loadFailed);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -34,14 +37,14 @@ export default function AdminOrderDetailRoute() {
     return () => {
       active = false;
     };
-  }, [orderId]);
+  }, [orderId, orderMessages.loadFailed]);
 
   if (!orderId) {
-    return <p className="text-sm font-bold text-red-700">Order id is missing.</p>;
+    return <p className="text-sm font-bold text-red-700">{orderMessages.missingId}</p>;
   }
 
   if (loading) {
-    return <p className="text-sm text-muted">Loading order...</p>;
+    return <p className="text-sm text-muted">{orderMessages.loading}</p>;
   }
 
   if (error) {
@@ -52,9 +55,9 @@ export default function AdminOrderDetailRoute() {
     return (
       <div className="space-y-6">
         <AdminPageHeader
-          eyebrow="Operations"
-          title="Order not found"
-          body="The requested order could not be loaded from the admin API."
+          eyebrow={orderMessages.eyebrow}
+          title={orderMessages.notFoundTitle}
+          body={orderMessages.notFoundBody}
         />
       </div>
     );

@@ -24,16 +24,27 @@ class TemplateConfigItemDto {
   status?: string;
 }
 
+class LocalizedCopyConfigDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CopyConfigItemDto)
+  en!: CopyConfigItemDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CopyConfigItemDto)
+  zh!: CopyConfigItemDto[];
+}
+
 export class UpdateCopyConfigDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CopyConfigItemDto)
   siteSettings!: CopyConfigItemDto[];
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CopyConfigItemDto)
-  uiCopy!: CopyConfigItemDto[];
+  @ValidateNested()
+  @Type(() => LocalizedCopyConfigDto)
+  uiCopy!: LocalizedCopyConfigDto;
 
   @IsArray()
   @ValidateNested({ each: true })
