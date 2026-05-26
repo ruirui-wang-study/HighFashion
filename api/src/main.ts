@@ -6,9 +6,10 @@ import express from "express";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/http-exception.filter";
+import { FileLogger } from "./common/file-logger";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create(AppModule, { bodyParser: false, logger: new FileLogger() });
   const config = app.get(ConfigService);
   const frontendUrl = config.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
 

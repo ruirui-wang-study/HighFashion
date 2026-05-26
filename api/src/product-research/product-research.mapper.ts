@@ -4,6 +4,7 @@ import type {
   CandidateListItem,
   CandidateListRecord,
   ProductResearchRecommendedAction,
+  ProductResearchRiskReviewItem,
   ProductResearchRiskSeverity,
   RiskFlagInput,
   ScoreSnapshot,
@@ -32,10 +33,15 @@ export function getLatestCandidateScore(scores: ScoreSnapshotInput[]): ScoreSnap
   };
 }
 
-export function getPrimaryRiskSeverity(flags: RiskFlagInput[]): ProductResearchRiskSeverity {
-  if (flags.length === 0) return "LOW";
+export function getOpenRiskFlags(flags: RiskFlagInput[]) {
+  return flags.filter((flag) => !flag.resolvedAt);
+}
 
-  return [...flags].sort((left, right) => riskSeverityRank[right.severity] - riskSeverityRank[left.severity])[0]?.severity ?? "LOW";
+export function getPrimaryRiskSeverity(flags: RiskFlagInput[]): ProductResearchRiskSeverity {
+  const openFlags = getOpenRiskFlags(flags);
+  if (openFlags.length === 0) return "LOW";
+
+  return [...openFlags].sort((left, right) => riskSeverityRank[right.severity] - riskSeverityRank[left.severity])[0]?.severity ?? "LOW";
 }
 
 export function mapRecommendedActionBadge(value: ProductResearchRecommendedAction) {
@@ -54,6 +60,24 @@ export function mapSupplierQuoteComparison(input: SupplierComparisonInput): Supp
     shippingToUKCents: input.supplier.shippingToUKCents ?? null,
     verifiedSupplier: Boolean(input.supplier.verifiedSupplier),
     tradeAssurance: Boolean(input.supplier.tradeAssurance),
+  };
+}
+
+export function mapRiskReviewItem(record: CandidateListRecord): ProductResearchRiskReviewItem {
+  const base = mapCandidateListItem(record);
+  const openRiskFlags = getOpenRiskFlags(record.riskFlags ?? [])
+    .filter((flag): flag is RiskFlagInput & { id: string } => Boolean(flag.id))
+    .map((flag) => ({
+      id: flag.id!,
+      riskType: flag.riskType ?? "UNKNOWN",
+      severity: flag.severity,
+      message: flag.message ?? "",
+      createdAt: flag.createdAt ? toIsoString(flag.createdAt) : new Date().toISOString(),
+    }));
+
+  return {
+    ...base,
+    openRiskFlags,
   };
 }
 
@@ -102,9 +126,15 @@ export function mapCandidateDetail(record: CandidateDetailRecord): CandidateDeta
     updatedAt: toIsoString(record.updatedAt),
     suppliers: record.suppliers.map(mapSupplierQuoteComparison),
     riskFlags: record.riskFlags.map((flag) => ({
-      ...flag,
+      id: flag.id,
+      riskType: flag.riskType,
+      severity: flag.severity,
+      message: flag.message,
+      resolvedAt: flag.resolvedAt ? toIsoString(flag.resolvedAt) : null,
+      resolutionNote: flag.resolutionNote ?? null,
       createdAt: flag.createdAt ? toIsoString(flag.createdAt) : undefined,
     })),
+    hasUnresolvedBlockingRisk: getOpenRiskFlags(record.riskFlags).some((flag) => flag.severity === "BLOCKING"),
     scores: record.scores.map((score) => ({
       ...score,
       createdAt: toIsoString(score.createdAt),

@@ -16,6 +16,8 @@ import { ScoreManualAdjustmentDto } from "./dto/score-manual-adjustment.dto";
 import { SupplierQuoteImportCommitDto, SupplierQuoteImportPreviewDto } from "./dto/supplier-quote-import.dto";
 import { SupplierQuoteUpdateDto } from "./dto/supplier-quote-update.dto";
 import { TestLaunchUpsertDto } from "./dto/test-launch-upsert.dto";
+import { ActivateScoringRuleDto } from "./dto/activate-scoring-rule.dto";
+import { ResolveRiskFlagDto } from "./dto/resolve-risk-flag.dto";
 import { ProductResearchService } from "./product-research.service";
 
 type RequestWithAdmin = Request & {
@@ -71,8 +73,18 @@ export class ProductResearchController {
 
   @Patch("candidates/:id/suppliers/:supplierId")
   @AdminRoles("OPERATOR")
-  async updateSupplierQuote(@Param("id") id: string, @Param("supplierId") supplierId: string, @Body() body: SupplierQuoteUpdateDto) {
-    return ok(await this.productResearchService.upsertSupplierQuote(id, supplierId, body));
+  async updateSupplierQuote(
+    @Req() request: RequestWithAdmin,
+    @Param("id") id: string,
+    @Param("supplierId") supplierId: string,
+    @Body() body: SupplierQuoteUpdateDto,
+  ) {
+    return ok(
+      await this.productResearchService.upsertSupplierQuote(id, supplierId, body, {
+        adminId: request.adminSession!.sub,
+        adminEmail: request.adminSession!.email,
+      }),
+    );
   }
 
   @Post("candidates/:id/decisions")
@@ -83,8 +95,13 @@ export class ProductResearchController {
 
   @Post("candidates/:id/test-launches")
   @AdminRoles("OPERATOR")
-  async upsertTestLaunch(@Param("id") id: string, @Body() body: TestLaunchUpsertDto) {
-    return ok(await this.productResearchService.upsertTestLaunch(id, body));
+  async upsertTestLaunch(@Req() request: RequestWithAdmin, @Param("id") id: string, @Body() body: TestLaunchUpsertDto) {
+    return ok(
+      await this.productResearchService.upsertTestLaunch(id, body, {
+        adminId: request.adminSession!.sub,
+        adminEmail: request.adminSession!.email,
+      }),
+    );
   }
 
   @Post("candidates/:id/convert-to-product")
@@ -147,6 +164,22 @@ export class ProductResearchController {
     return ok(await this.productResearchService.listRiskReview());
   }
 
+  @Post("candidates/:id/risk-flags/:flagId/resolve")
+  @AdminRoles("OPERATOR")
+  async resolveRiskFlag(
+    @Req() request: RequestWithAdmin,
+    @Param("id") id: string,
+    @Param("flagId") flagId: string,
+    @Body() body: ResolveRiskFlagDto,
+  ) {
+    return ok(
+      await this.productResearchService.resolveRiskFlag(id, flagId, {
+        adminId: request.adminSession!.sub,
+        adminEmail: request.adminSession!.email,
+      }, body.note),
+    );
+  }
+
   @Get("suppliers")
   @AdminRoles("ANALYST")
   async listSuppliers() {
@@ -185,7 +218,13 @@ export class ProductResearchController {
 
   @Post("scoring-rules/:id/activate")
   @AdminRoles("ADMIN")
-  async activateScoringRule(@Req() request: RequestWithAdmin, @Param("id") id: string) {
-    return ok(await this.productResearchService.activateScoringRule(id, { adminId: request.adminSession!.sub, adminEmail: request.adminSession!.email }));
+  async activateScoringRule(@Req() request: RequestWithAdmin, @Param("id") id: string, @Body() body: ActivateScoringRuleDto) {
+    return ok(
+      await this.productResearchService.activateScoringRule(
+        id,
+        { adminId: request.adminSession!.sub, adminEmail: request.adminSession!.email },
+        { recalculateExisting: body.recalculateExisting },
+      ),
+    );
   }
 }

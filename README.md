@@ -81,6 +81,49 @@ api/prisma/                  Prisma schema, migrations, seed script
   - `admin-marketing`
   - `admin-settings`
 
+## Project Status
+
+Current repo status as of `2026-05-26`:
+
+- Storefront and admin MVP are running end-to-end:
+  - browsing
+  - cart
+  - Stripe Checkout
+  - order lookup
+  - admin product, inventory, order, content, SEO, analytics, and settings surfaces
+- Product Research is now beyond route-shell stage:
+  - persistent candidates
+  - AI / CSV / supplier quote / Alibaba link import flows
+  - scoring
+  - risk flags
+  - test launches
+  - decisions
+  - convert-to-product draft safety rules
+- SEO automation is now AI-assisted rather than template-only:
+  - recommendations
+  - internal links
+  - opportunities
+  - content brief title and outline
+  - product SEO drafts
+- Shared AI configuration has been unified under `ai.*` settings with backward compatibility for older `product_research.ai.*` keys
+- Product Research and SEO automation have both been structurally split into domain services instead of continuing to grow as single oversized services
+- Public content and product copy now support separated `en` and `zh` storage with admin editing for:
+  - products
+  - FAQ
+  - guides
+  - collection landings
+  - about
+  - fit guide
+  - home page copy blocks
+
+Current maturity by area:
+
+- Commerce core: stable MVP
+- Admin operations: stable MVP
+- Product Research: usable internal alpha
+- SEO automation: usable internal alpha with AI-assisted draft generation
+- External data integrations: partial, still using fallback or mock-safe behavior where credentials or providers are not yet fully wired
+
 ## Current Features
 
 ### Storefront
@@ -183,6 +226,13 @@ api/prisma/                  Prisma schema, migrations, seed script
   - guide create and edit
   - publish, archive, and move guide back to draft
   - FAQ editing
+  - bilingual content editing for:
+    - products
+    - FAQ
+    - guides
+    - collection landings
+    - static pages
+    - home page copy blocks
 - SEO reporting:
   - SEO overview
   - page-level SEO performance view
@@ -199,15 +249,25 @@ api/prisma/                  Prisma schema, migrations, seed script
   - internal link suggestion generation and apply
   - product SEO draft generation and manual apply
   - SEO change log
+  - AI-assisted draft generation using shared `ai.*` provider config
 - Product research:
   - research dashboard and candidate list
   - candidate detail with score snapshot, supplier comparison, risk flags, and decisions
   - import workflow entry points for AI, candidate CSV, supplier quotes, and Alibaba links
-  - supplier library route shell
+  - supplier library
+  - import preview and commit flows
   - scoring rule activation
-  - risk review, test launch, and decision route shells
+  - risk review
+  - test launch persistence
+  - decision persistence
+  - batch recalculation and manual score adjustment
   - convert-to-product API guarded behind approved status and blocking-risk checks
   - audit logging for candidate create, score adjustment, decision, scoring-rule activation, and convert
+  - domain-service structure for:
+    - candidates
+    - imports
+    - assessment
+    - workflow
 - Analytics:
   - dashboard analytics
   - sales analytics
@@ -327,6 +387,27 @@ Expected supplier quote CSV columns:
 5. Record manual decisions such as `SAMPLE`, `TEST`, `WATCH`, `APPROVE`, or `REJECT`.
 6. Capture test launch data and validated score.
 7. Convert only approved, non-blocked candidates into `Product` drafts.
+
+### Product Research implementation status
+
+Implemented now:
+
+- AI preview and commit
+- candidate CSV preview and commit
+- supplier quote CSV preview and commit
+- Alibaba link preview and commit
+- deterministic scoring and risk evaluation
+- test score and validated score persistence
+- convert-to-product draft safeguards
+- audit logging on critical write paths
+
+Still pending or intentionally partial:
+
+- full duplicate resolution workflow with stronger merge review UX
+- richer supplier management and quote history
+- more complete scoring explainability UI
+- external market signal providers beyond local fallback
+- broader multi-provider AI runtime unification beyond the current shared config layer
 
 ## Environment
 
@@ -563,6 +644,13 @@ The repo now includes a semi-automated SEO operations layer under `/admin/seo/au
 - Product SEO generation never overwrites live fields until an operator clicks `Apply`.
 - Content pipeline never publishes until an operator clicks `Publish`.
 - All apply actions must write both `AuditLog` and `SeoChangeLog`.
+- AI-assisted draft generation is currently wired for:
+  - recommendations
+  - internal links
+  - opportunities
+  - content brief title and outline
+  - product SEO draft copy
+- AI provider status is visible in the SEO automation overview and uses the shared `ai.*` config layer.
 
 ### Cron jobs
 
@@ -617,11 +705,13 @@ npm run build
 
 ## Current Gaps
 
-- No CMS yet; guides and collection SEO content are local seed data
+- No full CMS yet; content is admin-editable in several domains, but broader content modeling is still application-managed
 - No live review system
 - No live tax engine
 - No country-specific shipping matrix yet
 - Some admin analytics and SEO connector surfaces still use mock-safe fallback data when external credentials are missing
+- Product Research still needs deeper duplicate resolution, supplier comparison UX, and scoring explainability
+- External AI/provider runtime is partially unified at the config layer, but not yet a single shared provider registry across all domains
 - No production observability stack yet
 
 ## Production TODO

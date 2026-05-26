@@ -132,6 +132,18 @@ export function AdminSeoAutomationPageClient() {
           </section>
 
           <section className="rounded-3xl bg-white p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "AI 状态" : "AI Status"}</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <DetailTile label={zh ? "配置 Provider" : "Configured provider"} value={data.aiStatus.configuredProvider} />
+              <DetailTile label={zh ? "当前生效 Provider" : "Effective provider"} value={data.aiStatus.effectiveProvider} />
+              <DetailTile label={zh ? "回退 Provider" : "Fallback provider"} value={data.aiStatus.fallbackProvider} />
+              <DetailTile label={zh ? "模型" : "Model"} value={data.aiStatus.model ?? "-"} />
+              <DetailTile label="Base URL" value={data.aiStatus.baseUrl ?? "-"} />
+              <DetailTile label={zh ? "API Key 已配置" : "API key configured"} value={data.aiStatus.apiKeyConfigured ? (zh ? "是" : "Yes") : (zh ? "否" : "No")} />
+            </div>
+          </section>
+
+          <section className="rounded-3xl bg-white p-6">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "最近 SEO 变更" : "Recent SEO Changes"}</p>
             <div className="mt-5 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
@@ -181,6 +193,15 @@ function ConnectionCard({ title, status, zh }: { title: string; status: "Connect
       <p className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ${status === "Connected" ? "bg-lime text-graphite" : "bg-graphite text-white"}`}>
         {status === "Connected" ? (zh ? "已连接" : "Connected") : (zh ? "未连接" : "Not Connected")}
       </p>
+    </div>
+  );
+}
+
+function DetailTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-warm p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">{label}</p>
+      <p className="mt-3 text-sm font-bold text-graphite break-all">{value}</p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import { IsIn, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CandidateQueryDto {
   @IsOptional()
@@ -22,7 +23,7 @@ export class CandidateQueryDto {
   targetMarket?: string;
 
   @IsOptional()
-  @IsIn(["SAMPLE", "TEST", "WATCH", "REJECT", "REVIEW"])
+  @IsIn(["SAMPLE", "TEST", "WATCH", "REJECT", "REVIEW", "APPROVE"])
   recommendedAction?: string;
 
   @IsOptional()
@@ -32,4 +33,17 @@ export class CandidateQueryDto {
   @IsOptional()
   @IsIn(["score-desc", "score-asc", "created-desc", "created-asc", "updated-desc", "updated-asc"])
   sort?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
 }

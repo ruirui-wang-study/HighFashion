@@ -1,16 +1,18 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { PrismaService } from "../common/prisma.service";
+import { AiConfigService } from "../ai/ai-config.service";
 import { DeepSeekProductResearchProvider } from "./deepseek-product-research.provider";
 import { LocalProductResearchProvider } from "./local-product-research.provider";
 import { MimoProductResearchProvider } from "./mimo-product-research.provider";
-import { resolveProductResearchAiConfig } from "./product-research-ai-config";
+import { mapAiConfigToProductResearch } from "./product-research-ai-config";
 
 @Injectable()
 export class ProductResearchRuntimeService {
+  private readonly logger = new Logger(ProductResearchRuntimeService.name);
+
   constructor(
-    private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly aiConfigService: AiConfigService,
     private readonly localProvider: LocalProductResearchProvider,
     private readonly deepSeekProvider: DeepSeekProductResearchProvider,
     private readonly mimoProvider: MimoProductResearchProvider,
@@ -22,7 +24,7 @@ export class ProductResearchRuntimeService {
     excludedCategories?: string[];
     count: number;
   }) {
-    const aiConfig = await resolveProductResearchAiConfig(this.prisma, this.config);
+    const aiConfig = mapAiConfigToProductResearch(await this.aiConfigService.resolve());
 
     if (aiConfig.provider === "deepseek" && aiConfig.apiKeyConfigured && aiConfig.baseUrl && aiConfig.candidateModel) {
       try {
@@ -31,7 +33,10 @@ export class ProductResearchRuntimeService {
           baseUrl: aiConfig.baseUrl,
           model: aiConfig.candidateModel,
         });
-      } catch {
+      } catch (error) {
+        this.logger.warn(
+          `DeepSeek candidate generation failed; using local fallback (${error instanceof Error ? error.message : "unknown error"})`,
+        );
         return this.localProvider.generateCandidates(input);
       }
     }
@@ -43,9 +48,16 @@ export class ProductResearchRuntimeService {
           baseUrl: aiConfig.baseUrl,
           model: aiConfig.candidateModel,
         });
-      } catch {
+      } catch (error) {
+        this.logger.warn(
+          `MiMo candidate generation failed; using local fallback (${error instanceof Error ? error.message : "unknown error"})`,
+        );
         return this.localProvider.generateCandidates(input);
       }
+    }
+
+    if (aiConfig.provider !== "local" && aiConfig.apiKeyConfigured) {
+      this.logger.warn(`AI provider "${aiConfig.provider}" is not fully configured; using local fallback`);
     }
 
     return this.localProvider.generateCandidates(input);

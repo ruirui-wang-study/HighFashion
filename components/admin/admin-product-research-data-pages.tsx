@@ -173,10 +173,27 @@ export function AdminProductResearchScoringRulesPageClient() {
                       variant={item.isActive ? "lime" : "outline"}
                       disabled={busy === item.id || item.isActive}
                       onClick={() => {
-                        if (!window.confirm(zh ? `确认启用评分规则 ${item.version} 吗？` : `Activate scoring rule ${item.version}?`)) return;
+                        if (
+                          !window.confirm(
+                            zh
+                              ? `确认启用评分规则 ${item.version} 吗？将按新权重重算全部候选品分数。`
+                              : `Activate scoring rule ${item.version}? All candidate scores will be recalculated with the new weights.`,
+                          )
+                        ) {
+                          return;
+                        }
                         setBusy(item.id);
-                        void activateProductResearchScoringRule(item.id)
-                          .then(() => loadRules())
+                        void activateProductResearchScoringRule(item.id, { recalculateExisting: true })
+                          .then((result) => {
+                            if (result.recalculated > 0) {
+                              window.alert(
+                                zh
+                                  ? `已启用 ${item.version}，并重算了 ${result.recalculated} 个候选品。`
+                                  : `Activated ${item.version} and recalculated ${result.recalculated} candidates.`,
+                              );
+                            }
+                            return loadRules();
+                          })
                           .catch((nextError) => setError(nextError instanceof Error ? nextError.message : zh ? "启用规则失败" : "Failed to activate rule"))
                           .finally(() => setBusy(null));
                       }}

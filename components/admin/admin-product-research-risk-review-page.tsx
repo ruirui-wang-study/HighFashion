@@ -2,36 +2,54 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getProductResearchRiskReview } from "@/lib/admin-api";
+import { getProductResearchRiskReview, resolveProductResearchRiskFlag } from "@/lib/admin-api";
 import { useLocale } from "@/components/locale-provider";
-import type { ProductResearchCandidateListItem } from "@/lib/product-research-types";
+import type { ProductResearchRiskReviewItem } from "@/lib/product-research-types";
 import { AdminProductResearchSectionShell } from "./admin-product-research-section-shell";
+import { Button } from "@/components/ui/button";
 
 export function AdminProductResearchRiskReviewPageClient() {
   const { locale } = useLocale();
   const zh = locale === "zh";
-  const [items, setItems] = useState<ProductResearchCandidateListItem[]>([]);
+  const [items, setItems] = useState<ProductResearchRiskReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busyFlagId, setBusyFlagId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  async function loadQueue() {
+    setLoading(true);
+    try {
+      const result = await getProductResearchRiskReview();
+      setItems(result);
+      setError(null);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : zh ? "加载风险复核队列失败" : "Failed to load risk review queue");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    let active = true;
-    getProductResearchRiskReview()
-      .then((result) => {
-        if (!active) return;
-        setItems(result);
-      })
-      .catch((nextError) => {
-        if (!active) return;
-        setError(nextError instanceof Error ? nextError.message : zh ? "加载风险复核队列失败" : "Failed to load risk review queue");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    void loadQueue();
   }, [zh]);
+
+  async function resolveFlag(candidateId: string, flagId: string) {
+    const note = window.prompt(zh ? "处理备注（可选）" : "Resolution note (optional)") ?? "";
+    if (!window.confirm(zh ? "确认标记该风险为已处理？" : "Mark this risk flag as resolved?")) {
+      return;
+    }
+
+    setBusyFlagId(flagId);
+    setError(null);
+    try {
+      await resolveProductResearchRiskFlag(candidateId, flagId, note || undefined);
+      await loadQueue();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : zh ? "处理风险标记失败" : "Failed to resolve risk flag");
+    } finally {
+      setBusyFlagId(null);
+    }
+  }
 
   return (
     <AdminProductResearchSectionShell
@@ -43,12 +61,14 @@ export function AdminProductResearchRiskReviewPageClient() {
       {loading ? <section className="rounded-3xl bg-white p-6 text-sm text-muted">{zh ? "正在加载风险复核队列..." : "Loading risk review queue..."}</section> : null}
       {!loading ? (
         <section className="grid gap-4 md:grid-cols-2">
-          {items.length === 0 ? <div className="rounded-3xl bg-white p-6 text-sm text-muted">{zh ? "当前没有高风险候选品。" : "No high-risk candidates in queue."}</div> : null}
+          {items.length === 0 ? <div className="rounded-3xl bg-white p-6 text-sm text-muted">{zh ? "当前没有待处理的高风险候选品。" : "No open high-risk candidates in queue."}</div> : null}
           {items.map((item) => (
-            <Link key={item.id} href={`/admin/product-research/candidates/${item.id}`} className="rounded-3xl bg-white p-6 transition hover:bg-warm">
+            <article key={item.id} className="rounded-3xl bg-white p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-bold text-graphite">{item.productName}</p>
+                  <Link href={`/admin/product-research/candidates/${item.id}`} className="font-bold text-graphite hover:underline">
+                    {item.productName}
+                  </Link>
                   <p className="mt-1 text-sm text-muted">{item.category} · {item.targetMarket}</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ${item.primaryRiskSeverity === "BLOCKING" ? "bg-red-600 text-white" : "bg-red-100 text-red-700"}`}>
@@ -60,7 +80,27 @@ export function AdminProductResearchRiskReviewPageClient() {
                 <Metric label={zh ? "分数" : "Score"} value={item.finalScore != null ? String(item.finalScore) : "-"} />
                 <Metric label={zh ? "风险" : "Risk"} value={item.riskScore != null ? String(item.riskScore) : "-"} />
               </div>
-            </Link>
+              <div className="mt-4 space-y-3">
+                {item.openRiskFlags.map((flag) => (
+                  <div key={flag.id} className="rounded-2xl bg-warm p-4 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold text-graphite">{flag.riskType}</p>
+                      <span className="text-xs font-bold uppercase tracking-[0.12em] text-red-700">{flag.severity}</span>
+                    </div>
+                    <p className="mt-2 text-muted">{flag.message}</p>
+                    <Button
+                      className="mt-3"
+                      size="sm"
+                      variant="outline"
+                      disabled={busyFlagId === flag.id}
+                      onClick={() => void resolveFlag(item.id, flag.id)}
+                    >
+                      {busyFlagId === flag.id ? (zh ? "处理中..." : "Resolving...") : (zh ? "标记已处理" : "Mark Resolved")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </article>
           ))}
         </section>
       ) : null}

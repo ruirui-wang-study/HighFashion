@@ -9,6 +9,7 @@ import {
   createProductResearchTestLaunch,
   getProductResearchCandidate,
   recalculateProductResearchCandidate,
+  resolveProductResearchRiskFlag,
 } from "@/lib/admin-api";
 import { useLocale } from "@/components/locale-provider";
 import type { ProductResearchCandidateDetail } from "@/lib/product-research-types";
@@ -134,7 +135,7 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
               <Button
                 className="mt-5 w-full"
                 variant="lime"
-                disabled={busy === "convert" || data.status !== "APPROVED" || data.primaryRiskSeverity === "BLOCKING"}
+                disabled={busy === "convert" || data.status !== "APPROVED" || data.hasUnresolvedBlockingRisk}
                 onClick={() => {
                   if (!window.confirm(zh ? "确认把这个已批准候选品转换为商品草稿吗？" : "Convert this approved candidate into a Product draft?")) return;
                   void runAction("convert", async () => {
@@ -281,12 +282,31 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
               <div className="mt-4 space-y-3">
                 {data.riskFlags.length === 0 ? <p className="text-sm text-muted">{zh ? "还没有风险标记。" : "No risk flags yet."}</p> : null}
                 {data.riskFlags.map((flag, index) => (
-                  <div key={`${flag.riskType ?? "risk"}-${index}`} className="rounded-2xl bg-warm p-4 text-sm">
+                  <div key={flag.id ?? `${flag.riskType ?? "risk"}-${index}`} className="rounded-2xl bg-warm p-4 text-sm">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-bold text-graphite">{flag.riskType ?? (zh ? "风险" : "RISK")}</p>
-                      <span className={`text-xs font-bold uppercase tracking-[0.12em] ${flag.severity === "BLOCKING" ? "text-red-700" : flag.severity === "HIGH" ? "text-amber-700" : "text-muted"}`}>{flag.severity}</span>
+                      <span className={`text-xs font-bold uppercase tracking-[0.12em] ${flag.severity === "BLOCKING" ? "text-red-700" : flag.severity === "HIGH" ? "text-amber-700" : "text-muted"}`}>
+                        {flag.resolvedAt ? (zh ? "已处理" : "RESOLVED") : flag.severity}
+                      </span>
                     </div>
                     <p className="mt-2 text-muted">{flag.message ?? (zh ? "等待风险复核。" : "Risk review pending.")}</p>
+                    {flag.resolutionNote ? <p className="mt-2 text-xs text-muted">{flag.resolutionNote}</p> : null}
+                    {!flag.resolvedAt && flag.id ? (
+                      <Button
+                        className="mt-3"
+                        size="sm"
+                        variant="outline"
+                        disabled={Boolean(busy)}
+                        onClick={() => {
+                          const note = window.prompt(zh ? "处理备注（可选）" : "Resolution note (optional)") ?? "";
+                          void runAction(`resolve-${flag.id}`, async () => {
+                            await resolveProductResearchRiskFlag(id, flag.id!, note || undefined);
+                          });
+                        }}
+                      >
+                        {zh ? "标记已处理" : "Mark Resolved"}
+                      </Button>
+                    ) : null}
                   </div>
                 ))}
               </div>

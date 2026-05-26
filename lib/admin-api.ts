@@ -19,12 +19,14 @@ import type {
 import type { AdminInventoryItem, AdminProduct, AdminProductPayload } from "./admin-types";
 import type {
   ProductResearchCandidateDetail,
-  ProductResearchCandidateListItem,
+  ProductResearchCandidateListResponse,
+  ProductResearchRiskReviewItem,
   ProductResearchDashboard,
   ProductResearchDecisionListItem,
   ProductResearchImportBatch,
   ProductResearchImportPreview,
   ProductResearchScoringRule,
+  ProductResearchScoringRuleActivationResult,
   ProductResearchSupplier,
   ProductResearchTestLaunch,
 } from "./product-research-types";
@@ -270,8 +272,10 @@ export function getProductResearchCandidates(query: {
   recommendedAction?: string;
   riskSeverity?: string;
   sort?: string;
+  page?: number;
+  pageSize?: number;
 } = {}) {
-  return adminApiFetch<ProductResearchCandidateListItem[]>(`/api/admin/product-research/candidates${toQueryString(query)}`);
+  return adminApiFetch<ProductResearchCandidateListResponse>(`/api/admin/product-research/candidates${toQueryString(query)}`);
 }
 
 export function getProductResearchCandidate(id: string) {
@@ -372,9 +376,10 @@ export function createProductResearchScoringRule(payload: { version: string; wei
   });
 }
 
-export function activateProductResearchScoringRule(id: string) {
-  return adminApiFetch<ProductResearchScoringRule>(`/api/admin/product-research/scoring-rules/${id}/activate`, {
+export function activateProductResearchScoringRule(id: string, options?: { recalculateExisting?: boolean }) {
+  return adminApiFetch<ProductResearchScoringRuleActivationResult>(`/api/admin/product-research/scoring-rules/${id}/activate`, {
     method: "POST",
+    body: JSON.stringify({ recalculateExisting: options?.recalculateExisting }),
   });
 }
 
@@ -487,7 +492,14 @@ export function getProductResearchTestLaunches() {
 }
 
 export function getProductResearchRiskReview() {
-  return adminApiFetch<ProductResearchCandidateListItem[]>("/api/admin/product-research/risk-review");
+  return adminApiFetch<ProductResearchRiskReviewItem[]>("/api/admin/product-research/risk-review");
+}
+
+export function resolveProductResearchRiskFlag(candidateId: string, flagId: string, note?: string) {
+  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${candidateId}/risk-flags/${flagId}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
 }
 
 export function runSeoHealthCheck() {

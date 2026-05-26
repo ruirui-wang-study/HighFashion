@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { bulkRecalculateProductResearchCandidates, getProductResearchCandidates } from "@/lib/admin-api";
 import { useLocale } from "@/components/locale-provider";
 import type { ProductResearchCandidateListItem } from "@/lib/product-research-types";
 import { AdminProductResearchSectionShell } from "./admin-product-research-section-shell";
 import { Button } from "@/components/ui/button";
 
+const PAGE_SIZE = 25;
+
 export function AdminProductResearchCandidatesPageClient() {
   const { locale } = useLocale();
   const zh = locale === "zh";
   const [items, setItems] = useState<ProductResearchCandidateListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("created-desc");
@@ -20,42 +25,51 @@ export function AdminProductResearchCandidatesPageClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    getProductResearchCandidates({ search: search || undefined, status: status || undefined, sort })
-      .then((result) => {
-        if (!active) return;
-        setItems(result);
-        setSelectedIds((current) => current.filter((id) => result.some((item) => item.id === id)));
+  const loadCandidates = useCallback(
+    async (nextPage: number) => {
+      setLoading(true);
+      try {
+        const result = await getProductResearchCandidates({
+          search: search || undefined,
+          status: status || undefined,
+          sort,
+          page: nextPage,
+          pageSize: PAGE_SIZE,
+        });
+        setItems(result.items);
+        setTotal(result.total);
+        setPage(result.page);
+        setTotalPages(result.totalPages);
+        setSelectedIds((current) => current.filter((id) => result.items.some((item) => item.id === id)));
         setError(null);
-      })
-      .catch((nextError) => {
-        if (!active) return;
+      } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : zh ? "加载候选品失败" : "Failed to load candidates");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [search, sort, status, zh]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search, sort, status, zh],
+  );
+
+  useEffect(() => {
+    void loadCandidates(1);
+  }, [loadCandidates]);
 
   const allVisibleSelected = useMemo(() => items.length > 0 && items.every((item) => selectedIds.includes(item.id)), [items, selectedIds]);
 
   function patchSearch(value: string) {
-    setLoading(true);
     setSearch(value);
+    setPage(1);
   }
 
   function patchStatus(value: string) {
-    setLoading(true);
     setStatus(value);
+    setPage(1);
   }
 
   function patchSort(value: string) {
-    setLoading(true);
     setSort(value);
+    setPage(1);
   }
 
   async function bulkRecalculate() {
@@ -66,8 +80,7 @@ export function AdminProductResearchCandidatesPageClient() {
     setError(null);
     try {
       await bulkRecalculateProductResearchCandidates(selectedIds, "Bulk recalculation from candidate list");
-      const result = await getProductResearchCandidates({ search: search || undefined, status: status || undefined, sort });
-      setItems(result);
+      await loadCandidates(page);
       setSelectedIds([]);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : zh ? "批量重算候选品失败" : "Failed to recalculate selected candidates");
@@ -83,7 +96,15 @@ export function AdminProductResearchCandidatesPageClient() {
       body={zh ? "查看候选品质量、批量重算分数，并只把经得起推敲的想法推进到打样、测试和商品草稿转换。" : "Review candidate quality, batch-recalculate scores, and move only the defensible ideas toward samples, tests, and draft product conversion."}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-muted">{selectedIds.length > 0 ? (zh ? `已选 ${selectedIds.length} 个` : `${selectedIds.length} selected`) : (zh ? "选择候选品后可批量重算。" : "Select candidates to batch recalculate.")}</div>
+        <div className="text-sm text-muted">
+          {selectedIds.length > 0
+            ? zh
+              ? `已选 ${selectedIds.length} 个`
+              : `${selectedIds.length} selected`
+            : zh
+              ? `共 ${total} 个候选品`
+              : `${total} candidates total`}
+        </div>
         <div className="flex gap-3">
           <Button variant="outline" disabled={busy || selectedIds.length === 0} onClick={() => void bulkRecalculate()}>
             {busy ? (zh ? "重算中..." : "Recalculating...") : (zh ? "批量重算" : "Bulk Recalculate")}
@@ -184,6 +205,22 @@ export function AdminProductResearchCandidatesPageClient() {
           </div>
         )}
       </div>
+
+      {!loading && totalPages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-graphite/10 bg-white px-4 py-3 text-sm">
+          <span className="text-muted">
+            {zh ? `第 ${page} / ${totalPages} 页` : `Page ${page} of ${totalPages}`}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1 || busy} onClick={() => void loadCandidates(page - 1)}>
+              {zh ? "上一页" : "Previous"}
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages || busy} onClick={() => void loadCandidates(page + 1)}>
+              {zh ? "下一页" : "Next"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </AdminProductResearchSectionShell>
   );
 }

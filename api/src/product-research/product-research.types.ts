@@ -20,7 +20,8 @@ export type ProductResearchRecommendedAction =
   | "TEST"
   | "WATCH"
   | "REJECT"
-  | "REVIEW";
+  | "REVIEW"
+  | "APPROVE";
 
 export type ProductResearchRiskSeverity = "LOW" | "MEDIUM" | "HIGH" | "BLOCKING";
 
@@ -49,10 +50,23 @@ export type ScoreSnapshot = {
 };
 
 export type RiskFlagInput = {
+  id?: string;
   severity: ProductResearchRiskSeverity;
   riskType?: string;
   message?: string;
   createdAt?: Date | string;
+  resolvedAt?: Date | string | null;
+  resolutionNote?: string | null;
+};
+
+export type ProductResearchRiskReviewItem = CandidateListItem & {
+  openRiskFlags: Array<{
+    id: string;
+    riskType: string;
+    severity: ProductResearchRiskSeverity;
+    message: string;
+    createdAt: string;
+  }>;
 };
 
 export type SupplierComparisonInput = {
@@ -203,6 +217,7 @@ export type CandidateDetailItem = {
   recommendedActionLabel: string;
   latestScore: ScoreSnapshot | null;
   primaryRiskSeverity: ProductResearchRiskSeverity;
+  hasUnresolvedBlockingRisk: boolean;
   finalScore?: number | null;
   riskScore?: number | null;
   validatedScore?: number | null;
@@ -210,7 +225,15 @@ export type CandidateDetailItem = {
   createdAt: string;
   updatedAt: string;
   suppliers: SupplierComparison[];
-  riskFlags: RiskFlagInput[];
+  riskFlags: Array<{
+    id?: string;
+    riskType?: string;
+    severity: ProductResearchRiskSeverity;
+    message?: string;
+    resolvedAt?: string | null;
+    resolutionNote?: string | null;
+    createdAt?: string;
+  }>;
   scores: ScoreSnapshotInput[];
   decisions: Array<CandidateDecisionRecord & { createdAt: string }>;
   signals: Array<{
@@ -257,6 +280,7 @@ export const recommendedActionLabels: Record<ProductResearchRecommendedAction, s
   WATCH: "Watch",
   REJECT: "Reject",
   REVIEW: "Review",
+  APPROVE: "Approved",
 };
 
 export const riskSeverityRank: Record<ProductResearchRiskSeverity, number> = {

@@ -402,4 +402,202 @@ describe("SeoAutomationService", () => {
       global.fetch = originalFetch;
     }
   });
+
+  it("uses deepseek to rewrite opportunity drafts when ai provider is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                items: [
+                  {
+                    id: "opp_1",
+                    suggestedAction: "Rewrite the product title and meta description to match runner intent and improve click-through from search.",
+                    expectedImpact: "High",
+                  },
+                  {
+                    id: "opp_2",
+                    suggestedAction: "Refresh the guide with clearer comparisons and stronger product bridges for knee support shoppers.",
+                    expectedImpact: "Medium",
+                  },
+                  {
+                    id: "opp_3",
+                    suggestedAction: "Add fit education and FAQ content to reduce hesitation on a high-impression product page.",
+                    expectedImpact: "Medium",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const opportunities = await service.generateOpportunities();
+
+      expect(fetchMock).toHaveBeenCalled();
+      expect(opportunities.find((item) => item.id === "opp_1")).toMatchObject({
+        suggestedAction: "Rewrite the product title and meta description to match runner intent and improve click-through from search.",
+        expectedImpact: "High",
+      });
+      expect(opportunities.find((item) => item.id === "opp_2")).toMatchObject({
+        suggestedAction: "Refresh the guide with clearer comparisons and stronger product bridges for knee support shoppers.",
+      });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("uses deepseek to rewrite content brief title and outline when ai provider is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                title: "Runner's Guide Brief: Choosing the Right Knee Sleeve",
+                outline: [
+                  "Explain when runners typically look for knee sleeve support",
+                  "Compare sleeve fit, compression feel, and breathability",
+                  "Connect buying questions to PulseGear product and guide links",
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const brief = await service.createContentBriefFromOpportunity("opp_1");
+
+      expect(fetchMock).toHaveBeenCalled();
+      expect(brief.title).toBe("Runner's Guide Brief: Choosing the Right Knee Sleeve");
+      expect(brief.outline).toEqual([
+        "Explain when runners typically look for knee sleeve support",
+        "Compare sleeve fit, compression feel, and breathability",
+        "Connect buying questions to PulseGear product and guide links",
+      ]);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("uses deepseek to rewrite product seo draft fields when ai provider is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_candidate_generation", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_scoring", value: "deepseek-v4-pro" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                seoTitle: "PulseFlex Knee Sleeve | Breathable Running Support",
+                seoDescription: "Lightweight knee compression for running and training, with breathable fabric and a secure fit that stays comfortable through repeat sessions.",
+                productFaq: [
+                  {
+                    question: "Who should use PulseFlex Knee Sleeve?",
+                    answer: "Runners and training users who want lightweight, breathable knee support without bulky coverage.",
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const draft = await service.generateProductSeoDraft("product_1");
+
+      expect(fetchMock).toHaveBeenCalled();
+      expect(draft.seoTitle).toBe("PulseFlex Knee Sleeve | Breathable Running Support");
+      expect(draft.seoDescription).toBe(
+        "Lightweight knee compression for running and training, with breathable fabric and a secure fit that stays comfortable through repeat sessions.",
+      );
+      expect(draft.productFaq).toEqual([
+        {
+          question: "Who should use PulseFlex Knee Sleeve?",
+          answer: "Runners and training users who want lightweight, breathable knee support without bulky coverage.",
+        },
+      ]);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("includes ai provider status in seo automation overview", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "deepseek" },
+      { key: "product_research.ai.base_url", value: "https://api.deepseek.com" },
+      { key: "product_research.ai.model_copy", value: "deepseek-v4-pro" },
+    ]);
+
+    const service = new SeoAutomationService(prisma, new ConfigService({ DEEPSEEK_API_KEY: "test-key" }));
+
+    const overview = await service.getOverview();
+
+    expect(overview.aiStatus).toMatchObject({
+      configuredProvider: "deepseek",
+      effectiveProvider: "deepseek",
+      fallbackProvider: "local",
+      baseUrl: "https://api.deepseek.com",
+      model: "deepseek-v4-pro",
+      apiKeyConfigured: true,
+    });
+  });
 });

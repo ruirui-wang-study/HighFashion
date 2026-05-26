@@ -24,6 +24,14 @@ export type SeoAutomationOverview = {
     total: number;
     needsReview: number;
   };
+  aiStatus: {
+    configuredProvider: string;
+    effectiveProvider: string;
+    fallbackProvider: "local";
+    baseUrl: string | null;
+    model: string | null;
+    apiKeyConfigured: boolean;
+  };
   recentChanges: SeoChangeLogItem[];
 };
 

@@ -41,6 +41,24 @@ export type ProductResearchDashboard = {
   }>;
 };
 
+export type ProductResearchCandidateListResponse = {
+  items: ProductResearchCandidateListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type ProductResearchRiskReviewItem = ProductResearchCandidateListItem & {
+  openRiskFlags: Array<{
+    id: string;
+    riskType: string;
+    severity: string;
+    message: string;
+    createdAt: string;
+  }>;
+};
+
 export type ProductResearchCandidateListItem = {
   id: string;
   productName: string;
@@ -109,10 +127,14 @@ export type ProductResearchCandidateDetail = {
     verifiedSupplier: boolean;
     tradeAssurance: boolean;
   }>;
+  hasUnresolvedBlockingRisk: boolean;
   riskFlags: Array<{
+    id?: string;
     severity: string;
     riskType?: string;
     message?: string;
+    resolvedAt?: string | null;
+    resolutionNote?: string | null;
     createdAt?: string;
   }>;
   decisions: Array<{
@@ -224,6 +246,11 @@ export type ProductResearchScoringRule = {
   isActive: boolean;
   createdById: string | null;
   createdAt: string;
+};
+
+export type ProductResearchScoringRuleActivationResult = {
+  rule: ProductResearchScoringRule;
+  recalculated: number;
 };
 
 export type ProductResearchDecisionListItem = {

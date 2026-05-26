@@ -137,6 +137,7 @@ enum ProductResearchRecommendedAction {
   WATCH
   REJECT
   REVIEW
+  APPROVE
 }
 
 enum SupplierPlatform {
@@ -251,6 +252,7 @@ model AdminUser {
   productResearchImportBatches ProductResearchImportBatch[] @relation("ProductResearchImportBatchCreatedBy")
   productResearchDecisions ProductResearchDecision[] @relation("ProductResearchDecisionOperator")
   createdScoringRules ScoringRule[] @relation("ScoringRuleCreatedBy")
+  resolvedRiskFlags   ProductResearchRiskFlag[] @relation("ProductResearchRiskFlagResolvedBy")
 
   @@index([roleId])
 }
@@ -672,15 +674,20 @@ model ProductResearchImportBatch {
 }
 
 model ProductResearchRiskFlag {
-  id          String                       @id @default(cuid())
-  candidateId String
-  riskType    String
-  severity    ProductResearchRiskSeverity
-  message     String
-  createdAt   DateTime                     @default(now())
-  candidate   ProductCandidate             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id             String                       @id @default(cuid())
+  candidateId    String
+  riskType       String
+  severity       ProductResearchRiskSeverity
+  message        String
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolutionNote String?
+  createdAt      DateTime                     @default(now())
+  candidate      ProductCandidate             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  resolvedBy       AdminUser?                   @relation("ProductResearchRiskFlagResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
 
   @@index([candidateId, severity])
+  @@index([candidateId, resolvedAt])
   @@index([severity, createdAt])
 }
 

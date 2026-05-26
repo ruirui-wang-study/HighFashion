@@ -81,6 +81,7 @@ describe("product research mapper", () => {
 
     expect(result.latestScore?.finalScore).toBe(86.25);
     expect(result.primaryRiskSeverity).toBe("HIGH");
+    expect(result.hasUnresolvedBlockingRisk).toBe(false);
     expect(result.createdAt).toBe("2026-05-25T02:30:00.000Z");
     expect(result.decisions[0]?.createdAt).toBe("2026-05-25T03:10:00.000Z");
   });
@@ -104,6 +105,12 @@ describe("product research mapper", () => {
 
   it("rolls up the highest risk severity", () => {
     expect(getPrimaryRiskSeverity([{ severity: "LOW" }, { severity: "BLOCKING" }, { severity: "HIGH" }])).toBe("BLOCKING");
+    expect(
+      getPrimaryRiskSeverity([
+        { severity: "BLOCKING", resolvedAt: "2026-05-25T00:00:00.000Z" },
+        { severity: "HIGH" },
+      ]),
+    ).toBe("HIGH");
     expect(getPrimaryRiskSeverity([])).toBe("LOW");
   });
 

@@ -6,12 +6,13 @@ type CopyConfigItem = {
 };
 
 const AI_KEYS = {
-  provider: "product_research.ai.provider",
-  baseUrl: "product_research.ai.base_url",
-  candidateModel: "product_research.ai.model_candidate_generation",
-  scoringModel: "product_research.ai.model_scoring",
-  copyModel: "product_research.ai.model_copy",
-  fastModel: "product_research.ai.model_fast",
+  provider: "ai.provider",
+  baseUrl: "ai.base_url",
+  seoCopyModel: "ai.model.seo_copy",
+  candidateModel: "ai.model.product_research_candidate",
+  scoringModel: "ai.model.product_research_scoring",
+  copyModel: "ai.model.product_research_copy",
+  fastModel: "ai.model.fast",
 } as const;
 
 export function AdminAiProviderConfigEditor({
@@ -30,10 +31,10 @@ export function AdminAiProviderConfigEditor({
 
   return (
     <section className="rounded-2xl bg-warm p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "选品 AI Provider" : "Product Research AI Provider"}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "AI Provider 配置" : "AI Provider Config"}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted">{zh ? "Provider" : "Provider"}</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted">Provider</span>
           <select
             value={getValue(AI_KEYS.provider)}
             onChange={(event) => setValue(AI_KEYS.provider, event.target.value)}
@@ -46,16 +47,17 @@ export function AdminAiProviderConfigEditor({
           </select>
         </label>
 
-        <LabeledInput zh={zh} label="Base URL" value={getValue(AI_KEYS.baseUrl)} onChange={(value) => setValue(AI_KEYS.baseUrl, value)} />
-        <LabeledInput zh={zh} label={zh ? "候选品模型" : "Candidate model"} value={getValue(AI_KEYS.candidateModel)} onChange={(value) => setValue(AI_KEYS.candidateModel, value)} />
-        <LabeledInput zh={zh} label={zh ? "评分模型" : "Scoring model"} value={getValue(AI_KEYS.scoringModel)} onChange={(value) => setValue(AI_KEYS.scoringModel, value)} />
-        <LabeledInput zh={zh} label={zh ? "文案模型" : "Copy model"} value={getValue(AI_KEYS.copyModel)} onChange={(value) => setValue(AI_KEYS.copyModel, value)} />
-        <LabeledInput zh={zh} label={zh ? "快速模型" : "Fast model"} value={getValue(AI_KEYS.fastModel)} onChange={(value) => setValue(AI_KEYS.fastModel, value)} />
+        <LabeledInput label="Base URL" value={getValue(AI_KEYS.baseUrl)} onChange={(value) => setValue(AI_KEYS.baseUrl, value)} />
+        <LabeledInput label={zh ? "SEO 文案模型" : "SEO copy model"} value={getValue(AI_KEYS.seoCopyModel)} onChange={(value) => setValue(AI_KEYS.seoCopyModel, value)} />
+        <LabeledInput label={zh ? "选品生成模型" : "Candidate model"} value={getValue(AI_KEYS.candidateModel)} onChange={(value) => setValue(AI_KEYS.candidateModel, value)} />
+        <LabeledInput label={zh ? "选品评分模型" : "Scoring model"} value={getValue(AI_KEYS.scoringModel)} onChange={(value) => setValue(AI_KEYS.scoringModel, value)} />
+        <LabeledInput label={zh ? "选品文案模型" : "Copy model"} value={getValue(AI_KEYS.copyModel)} onChange={(value) => setValue(AI_KEYS.copyModel, value)} />
+        <LabeledInput label={zh ? "快速模型" : "Fast model"} value={getValue(AI_KEYS.fastModel)} onChange={(value) => setValue(AI_KEYS.fastModel, value)} />
       </div>
       <p className="mt-4 text-xs leading-6 text-muted">
         {zh
-          ? "后台只保存 provider、base URL 和模型位。API key 仍然只从 .env 读取；若未配置有效 key，Product Research 会自动回退到本地 fallback provider。"
-          : "Admin settings store provider, base URL, and model slots only. API keys remain in .env; if no valid key is configured, Product Research automatically falls back to the local provider."}
+          ? "后台只保存 provider、base URL 和模型位。API key 仍然只从 .env 读取；如果当前 provider 没有可用 key，系统会自动回退到 local provider。"
+          : "Admin settings store provider, base URL, and model slots only. API keys remain in .env; if no valid key is configured, the runtime automatically falls back to the local provider."}
       </p>
     </section>
   );
@@ -66,7 +68,6 @@ function LabeledInput({
   value,
   onChange,
 }: {
-  zh: boolean;
   label: string;
   value: string;
   onChange: (value: string) => void;
