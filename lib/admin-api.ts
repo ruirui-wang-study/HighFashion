@@ -11,14 +11,19 @@ import type {
   InternalLinkSuggestionItem,
   ProductSeoDraft,
   SeoAutomationOverview,
-  SeoChangeLogItem,
+  SeoChangeLogPage,
   SeoIssueItem,
   SeoRecommendationItem,
   SearchConsoleSyncResult,
 } from "./seo-automation-types";
 import type { AdminInventoryItem, AdminProduct, AdminProductPayload } from "./admin-types";
+import { adminOpenApiFetch } from "./admin-openapi-client";
 import type {
+  ProductResearchAssessmentRuntime,
   ProductResearchCandidateDetail,
+  ProductResearchCandidateScore,
+  ProductResearchCandidateSignal,
+  ProductResearchHistoryPage,
   ProductResearchCandidateListResponse,
   ProductResearchRiskReviewItem,
   ProductResearchDashboard,
@@ -36,11 +41,13 @@ type ApiResponse<T> = { success: true; data: T } | { success: false; error: { co
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const requestId = (typeof crypto !== "undefined" && "randomUUID" in crypto) ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      "x-request-id": requestId,
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
@@ -256,11 +263,15 @@ export function updateAdminCopyConfig(payload: Omit<AdminCopyConfig, "updatedAt"
 }
 
 export function getSeoAutomationOverview() {
-  return adminApiFetch<SeoAutomationOverview>("/api/admin/seo/automation/overview");
+  return adminOpenApiFetch<SeoAutomationOverview>("/api/admin/seo/automation/overview");
 }
 
 export function getProductResearchDashboard() {
-  return adminApiFetch<ProductResearchDashboard>("/api/admin/product-research/dashboard");
+  return adminOpenApiFetch<ProductResearchDashboard>("/api/admin/product-research/dashboard");
+}
+
+export function getProductResearchAssessmentRuntime() {
+  return adminOpenApiFetch<ProductResearchAssessmentRuntime>("/api/admin/product-research/assessment-runtime");
 }
 
 export function getProductResearchCandidates(query: {
@@ -275,24 +286,42 @@ export function getProductResearchCandidates(query: {
   page?: number;
   pageSize?: number;
 } = {}) {
-  return adminApiFetch<ProductResearchCandidateListResponse>(`/api/admin/product-research/candidates${toQueryString(query)}`);
+  return adminOpenApiFetch<ProductResearchCandidateListResponse>("/api/admin/product-research/candidates", { query });
 }
 
 export function getProductResearchCandidate(id: string) {
-  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${id}`);
+  return adminOpenApiFetch<ProductResearchCandidateDetail>("/api/admin/product-research/candidates/{id}", { pathParams: { id } });
+}
+
+export function getProductResearchCandidateScores(id: string, query: { page?: number; pageSize?: number } = {}) {
+  return adminOpenApiFetch<ProductResearchHistoryPage<ProductResearchCandidateScore>>(
+    "/api/admin/product-research/candidates/{id}/scores",
+    { pathParams: { id }, query },
+  );
+}
+
+export function getProductResearchCandidateSignals(id: string, query: { page?: number; pageSize?: number } = {}) {
+  return adminOpenApiFetch<ProductResearchHistoryPage<ProductResearchCandidateSignal>>(
+    "/api/admin/product-research/candidates/{id}/signals",
+    { pathParams: { id }, query },
+  );
 }
 
 export function recalculateProductResearchCandidate(id: string) {
-  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${id}/recalculate`, {
+  return adminOpenApiFetch<ProductResearchCandidateDetail>("/api/admin/product-research/candidates/{id}/recalculate", {
     method: "POST",
+    pathParams: { id },
   });
 }
 
 export function bulkRecalculateProductResearchCandidates(ids: string[], reason?: string) {
-  return adminApiFetch<{ recalculated: number }>("/api/admin/product-research/candidates/bulk-recalculate", {
-    method: "POST",
-    body: JSON.stringify({ ids, reason }),
-  });
+  return adminOpenApiFetch<{ recalculated: number; background: boolean }>(
+    "/api/admin/product-research/candidates/bulk-recalculate",
+    {
+      method: "POST",
+      body: JSON.stringify({ ids, reason }),
+    },
+  );
 }
 
 export function createProductResearchCandidate(payload: {
@@ -310,22 +339,24 @@ export function createProductResearchCandidate(payload: {
   alibabaKeywords?: string;
   sourceUrl?: string;
 }) {
-  return adminApiFetch<ProductResearchCandidateDetail>("/api/admin/product-research/candidates", {
+  return adminOpenApiFetch<ProductResearchCandidateDetail>("/api/admin/product-research/candidates", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export function createProductResearchDecision(id: string, payload: { decision: string; reason?: string }) {
-  return adminApiFetch<{ id: string; decision: string }>(`/api/admin/product-research/candidates/${id}/decisions`, {
+  return adminOpenApiFetch<{ id: string; decision: string }>("/api/admin/product-research/candidates/{id}/decisions", {
     method: "POST",
+    pathParams: { id },
     body: JSON.stringify(payload),
   });
 }
 
 export function adjustProductResearchScore(id: string, payload: { finalScore: number; reason?: string }) {
-  return adminApiFetch<{ id: string; finalScore: number }>(`/api/admin/product-research/candidates/${id}/score-adjust`, {
+  return adminOpenApiFetch<{ id: string; finalScore: number }>("/api/admin/product-research/candidates/{id}/score-adjust", {
     method: "POST",
+    pathParams: { id },
     body: JSON.stringify(payload),
   });
 }
@@ -349,42 +380,48 @@ export function createProductResearchTestLaunch(id: string, payload: {
   status?: string;
   notes?: string;
 }) {
-  return adminApiFetch<ProductResearchTestLaunch>(`/api/admin/product-research/candidates/${id}/test-launches`, {
+  return adminOpenApiFetch<ProductResearchTestLaunch>("/api/admin/product-research/candidates/{id}/test-launches", {
     method: "POST",
+    pathParams: { id },
     body: JSON.stringify(payload),
   });
 }
 
 export function convertProductResearchCandidate(id: string) {
-  return adminApiFetch<{ candidateId: string; productId: string; status: string }>(`/api/admin/product-research/candidates/${id}/convert-to-product`, {
-    method: "POST",
-  });
+  return adminOpenApiFetch<{ candidateId: string; productId: string; status: string }>(
+    "/api/admin/product-research/candidates/{id}/convert-to-product",
+    { method: "POST", pathParams: { id } },
+  );
 }
 
 export function getProductResearchSuppliers() {
-  return adminApiFetch<ProductResearchSupplier[]>("/api/admin/product-research/suppliers");
+  return adminOpenApiFetch<ProductResearchSupplier[]>("/api/admin/product-research/suppliers");
 }
 
 export function getProductResearchScoringRules() {
-  return adminApiFetch<ProductResearchScoringRule[]>("/api/admin/product-research/scoring-rules");
+  return adminOpenApiFetch<ProductResearchScoringRule[]>("/api/admin/product-research/scoring-rules");
 }
 
 export function createProductResearchScoringRule(payload: { version: string; weights: Record<string, number>; isActive?: boolean }) {
-  return adminApiFetch<ProductResearchScoringRule>("/api/admin/product-research/scoring-rules", {
+  return adminOpenApiFetch<ProductResearchScoringRule>("/api/admin/product-research/scoring-rules", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export function activateProductResearchScoringRule(id: string, options?: { recalculateExisting?: boolean }) {
-  return adminApiFetch<ProductResearchScoringRuleActivationResult>(`/api/admin/product-research/scoring-rules/${id}/activate`, {
-    method: "POST",
-    body: JSON.stringify({ recalculateExisting: options?.recalculateExisting }),
-  });
+  return adminOpenApiFetch<ProductResearchScoringRuleActivationResult>(
+    "/api/admin/product-research/scoring-rules/{id}/activate",
+    {
+      method: "POST",
+      pathParams: { id },
+      body: JSON.stringify({ recalculateExisting: options?.recalculateExisting }),
+    },
+  );
 }
 
 export function getProductResearchImportBatches() {
-  return adminApiFetch<ProductResearchImportBatch[]>("/api/admin/product-research/import/batches");
+  return adminOpenApiFetch<ProductResearchImportBatch[]>("/api/admin/product-research/import/batches");
 }
 
 export function previewProductResearchAiImport(payload: {
@@ -393,7 +430,7 @@ export function previewProductResearchAiImport(payload: {
   excludedCategories?: string[];
   count?: number;
 }) {
-  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/ai/preview", {
+  return adminOpenApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/ai/preview", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -403,7 +440,7 @@ export function commitProductResearchAiImport(payload: {
   previewItems: Array<Record<string, unknown>>;
   selectedIndexes: number[];
 }) {
-  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+  return adminOpenApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
     "/api/admin/product-research/import/ai/commit",
     {
       method: "POST",
@@ -417,7 +454,7 @@ export function previewProductResearchCsvImport(payload: {
   rows: Array<Record<string, unknown>>;
   mapping?: Record<string, string>;
 }) {
-  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/csv/preview", {
+  return adminOpenApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/csv/preview", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -428,7 +465,7 @@ export function commitProductResearchCsvImport(payload: {
   rows: Array<Record<string, unknown>>;
   action?: "merge" | "skip" | "create_anyway";
 }) {
-  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+  return adminOpenApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
     "/api/admin/product-research/import/csv/commit",
     {
       method: "POST",
@@ -442,7 +479,7 @@ export function previewProductResearchSupplierQuoteImport(payload: {
   rows: Array<Record<string, unknown>>;
   mapping?: Record<string, string>;
 }) {
-  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/supplier-quotes/preview", {
+  return adminOpenApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/supplier-quotes/preview", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -453,7 +490,7 @@ export function commitProductResearchSupplierQuoteImport(payload: {
   rows: Array<Record<string, unknown>>;
   action?: "merge" | "skip" | "create_anyway";
 }) {
-  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number }>(
+  return adminOpenApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number }>(
     "/api/admin/product-research/import/supplier-quotes/commit",
     {
       method: "POST",
@@ -463,7 +500,7 @@ export function commitProductResearchSupplierQuoteImport(payload: {
 }
 
 export function previewProductResearchAlibabaImport(payload: { links: string[]; notes?: string }) {
-  return adminApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/alibaba-links/preview", {
+  return adminOpenApiFetch<ProductResearchImportPreview>("/api/admin/product-research/import/alibaba-links/preview", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -474,7 +511,7 @@ export function commitProductResearchAlibabaImport(payload: {
   selectedIndexes: number[];
   notes?: string;
 }) {
-  return adminApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
+  return adminOpenApiFetch<{ batchId: string; importedCount: number; duplicateCount: number; skippedCount: number; createdIds: string[] }>(
     "/api/admin/product-research/import/alibaba-links/commit",
     {
       method: "POST",
@@ -484,108 +521,132 @@ export function commitProductResearchAlibabaImport(payload: {
 }
 
 export function getProductResearchDecisions() {
-  return adminApiFetch<ProductResearchDecisionListItem[]>("/api/admin/product-research/decisions");
+  return adminOpenApiFetch<ProductResearchDecisionListItem[]>("/api/admin/product-research/decisions");
 }
 
 export function getProductResearchTestLaunches() {
-  return adminApiFetch<ProductResearchTestLaunch[]>("/api/admin/product-research/test-launches");
+  return adminOpenApiFetch<ProductResearchTestLaunch[]>("/api/admin/product-research/test-launches");
 }
 
 export function getProductResearchRiskReview() {
-  return adminApiFetch<ProductResearchRiskReviewItem[]>("/api/admin/product-research/risk-review");
+  return adminOpenApiFetch<ProductResearchRiskReviewItem[]>("/api/admin/product-research/risk-review");
 }
 
 export function resolveProductResearchRiskFlag(candidateId: string, flagId: string, note?: string) {
-  return adminApiFetch<ProductResearchCandidateDetail>(`/api/admin/product-research/candidates/${candidateId}/risk-flags/${flagId}/resolve`, {
-    method: "POST",
-    body: JSON.stringify({ note }),
-  });
+  return adminOpenApiFetch<ProductResearchCandidateDetail>(
+    "/api/admin/product-research/candidates/{id}/risk-flags/{flagId}/resolve",
+    {
+      method: "POST",
+      pathParams: { id: candidateId, flagId },
+      body: JSON.stringify({ note }),
+    },
+  );
 }
 
 export function runSeoHealthCheck() {
-  return adminApiFetch<{ lastRunAt: string; pages: unknown[]; issues: SeoIssueItem[] }>("/api/admin/seo/automation/health-check/run", {
-    method: "POST",
-  });
+  return adminOpenApiFetch<{ lastRunAt: string; pages: unknown[]; issues: SeoIssueItem[] }>(
+    "/api/admin/seo/automation/health-check/run",
+    { method: "POST" },
+  );
 }
 
 export function getSeoIssues() {
-  return adminApiFetch<SeoIssueItem[]>("/api/admin/seo/issues");
+  return adminOpenApiFetch<SeoIssueItem[]>("/api/admin/seo/issues");
 }
 
 export function bulkReviewSeoIssues(ids: string[]) {
-  return adminApiFetch<{ reviewed: number }>("/api/admin/seo/issues/bulk-review", {
+  return adminOpenApiFetch<{ reviewed: number }>("/api/admin/seo/issues/bulk-review", {
     method: "POST",
     body: JSON.stringify({ ids }),
   });
 }
 
 export function syncSeoGsc() {
-  return adminApiFetch<SearchConsoleSyncResult>("/api/admin/seo/gsc/sync", { method: "POST" });
+  return adminOpenApiFetch<SearchConsoleSyncResult>("/api/admin/seo/gsc/sync", { method: "POST" });
 }
 
 export function syncSeoGa4() {
-  return adminApiFetch<Ga4SyncResult>("/api/admin/seo/ga4/sync", { method: "POST" });
+  return adminOpenApiFetch<Ga4SyncResult>("/api/admin/seo/ga4/sync", { method: "POST" });
 }
 
 export function getSeoOpportunities() {
-  return adminApiFetch<ContentOpportunityItem[]>("/api/admin/seo/opportunities");
+  return adminOpenApiFetch<ContentOpportunityItem[]>("/api/admin/seo/opportunities");
 }
 
 export function generateSeoOpportunities() {
-  return adminApiFetch<ContentOpportunityItem[]>("/api/admin/seo/opportunities/generate", { method: "POST" });
+  return adminOpenApiFetch<ContentOpportunityItem[]>("/api/admin/seo/opportunities/generate", { method: "POST" });
 }
 
 export function createSeoContentBrief(opportunityId: string) {
-  return adminApiFetch<ContentBriefItem>(`/api/admin/seo/opportunities/${opportunityId}/brief`, { method: "POST" });
+  return adminOpenApiFetch<ContentBriefItem>("/api/admin/seo/opportunities/{id}/brief", {
+    method: "POST",
+    pathParams: { id: opportunityId },
+  });
 }
 
 export function getSeoRecommendations() {
-  return adminApiFetch<SeoRecommendationItem[]>("/api/admin/seo/recommendations");
+  return adminOpenApiFetch<SeoRecommendationItem[]>("/api/admin/seo/recommendations");
 }
 
 export function generateSeoRecommendations() {
-  return adminApiFetch<SeoRecommendationItem[]>("/api/admin/seo/recommendations/generate", { method: "POST" });
+  return adminOpenApiFetch<SeoRecommendationItem[]>("/api/admin/seo/recommendations/generate", { method: "POST" });
 }
 
 export function applySeoRecommendation(id: string) {
-  return adminApiFetch<SeoRecommendationItem>(`/api/admin/seo/recommendations/${id}/apply`, { method: "POST" });
+  return adminOpenApiFetch<SeoRecommendationItem>("/api/admin/seo/recommendations/{id}/apply", {
+    method: "POST",
+    pathParams: { id },
+  });
 }
 
 export function rejectSeoRecommendation(id: string) {
-  return adminApiFetch<SeoRecommendationItem>(`/api/admin/seo/recommendations/${id}/reject`, { method: "POST" });
+  return adminOpenApiFetch<SeoRecommendationItem>("/api/admin/seo/recommendations/{id}/reject", {
+    method: "POST",
+    pathParams: { id },
+  });
 }
 
 export function getSeoContentPipeline() {
-  return adminApiFetch<ContentBriefItem[]>("/api/admin/seo/content-pipeline");
+  return adminOpenApiFetch<ContentBriefItem[]>("/api/admin/seo/content-pipeline");
 }
 
 export function publishSeoContentBrief(id: string) {
-  return adminApiFetch<ContentBriefItem>(`/api/admin/seo/content-pipeline/${id}/publish`, { method: "POST" });
+  return adminOpenApiFetch<ContentBriefItem>("/api/admin/seo/content-pipeline/{id}/publish", {
+    method: "POST",
+    pathParams: { id },
+  });
 }
 
 export function getSeoInternalLinks() {
-  return adminApiFetch<InternalLinkSuggestionItem[]>("/api/admin/seo/internal-links");
+  return adminOpenApiFetch<InternalLinkSuggestionItem[]>("/api/admin/seo/internal-links");
 }
 
 export function generateSeoInternalLinks() {
-  return adminApiFetch<InternalLinkSuggestionItem[]>("/api/admin/seo/internal-links/generate", { method: "POST" });
+  return adminOpenApiFetch<InternalLinkSuggestionItem[]>("/api/admin/seo/internal-links/generate", { method: "POST" });
 }
 
 export function applySeoInternalLink(id: string) {
-  return adminApiFetch<InternalLinkSuggestionItem>(`/api/admin/seo/internal-links/${id}/apply`, { method: "POST" });
+  return adminOpenApiFetch<InternalLinkSuggestionItem>("/api/admin/seo/internal-links/{id}/apply", {
+    method: "POST",
+    pathParams: { id },
+  });
 }
 
-export function getSeoChangeLog() {
-  return adminApiFetch<SeoChangeLogItem[]>("/api/admin/seo/change-log");
+export function getSeoChangeLog(query: { page?: number; pageSize?: number } = {}) {
+  return adminOpenApiFetch<SeoChangeLogPage>("/api/admin/seo/change-log", { query });
 }
 
 export function generateAdminProductSeoDraft(id: string) {
-  return adminApiFetch<ProductSeoDraft>(`/api/admin/seo/products/${id}/seo/generate`, { method: "POST" });
+  return adminOpenApiFetch<ProductSeoDraft>("/api/admin/seo/products/{id}/seo/generate", {
+    method: "POST",
+    pathParams: { id },
+  });
 }
 
 export function applyAdminProductSeoDraft(id: string, draft: ProductSeoDraft) {
-  return adminApiFetch<AdminProduct>(`/api/admin/seo/products/${id}/seo/apply`, {
+  return adminOpenApiFetch<AdminProduct>("/api/admin/seo/products/{id}/seo/apply", {
     method: "POST",
+    pathParams: { id },
     body: JSON.stringify(draft),
   });
 }

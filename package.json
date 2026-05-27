@@ -8,6 +8,9 @@
     "dev:all": "concurrently -n web,api -c blue,green \"npm run dev\" \"npm run dev:api\"",
     "logs:link-next": "node scripts/link-next-dev-logs.mjs",
     "logs:migrate": "node scripts/migrate-logs.mjs",
+    "openapi:generate": "npm --prefix api run openapi:generate",
+    "openapi:types": "npm run openapi:generate && openapi-typescript \"api/openapi/admin-domains.json\" -o \"lib/generated/admin-openapi.d.ts\"",
+    "openapi:check": "node scripts/check-openapi-drift.mjs",
     "build": "next build",
     "build:api": "npm --prefix api run build",
     "start": "next start",
@@ -35,11 +38,12 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
+    "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2",
-    "concurrently": "^9.2.1"
+    "typescript": "^5.7.2"
   }
 }

@@ -88,25 +88,36 @@ These are not all wired into runtime behavior yet, but they are the intended con
 
 ### Xiaomi MiMo
 
-MiMo is a practical drop-in choice for this project because the platform exposes an OpenAI-compatible chat API surface with:
+MiMo supports two API surfaces:
 
-- base URL: `https://api.xiaomimimo.com/v1`
-- auth header: `api-key: $MIMO_API_KEY`
+| Surface | Base URL | Used for |
+| --- | --- | --- |
+| **Anthropic Messages (Token Plan CN)** | `https://token-plan-cn.xiaomimimo.com/anthropic` | **Recommended** for real keys; SEO + product research + planned Agent (`/v1/messages`, `tool_use`) |
+| OpenAI-compatible | `https://api.xiaomimimo.com/v1` | DeepSeek-style `/chat/completions`; official endpoint may reject Token Plan keys (401) |
+
+Auth (either surface): `api-key: $MIMO_API_KEY` or `Authorization: Bearer $MIMO_API_KEY`.
+
+Connectivity check: `cd api && npm run test:mimo`.
+
+Design docs: [admin-ai-agent.md](./admin-ai-agent.md) · [现状能力](./admin-ai-capabilities.md).
 
 Official references:
 
 - MiMo model list and limits: https://platform.xiaomimimo.com/docs/en-US/quick-start/model
-- MiMo OpenAI-compatible request examples: https://platform.xiaomimimo.com/docs/en-US/usage-guide/multimodal-understanding/image-understanding
+- Anthropic API: https://platform.xiaomimimo.com/docs/en-US/api/chat/anthropic-api
+- OpenAI-compatible examples: https://platform.xiaomimimo.com/docs/en-US/usage-guide/multimodal-understanding/image-understanding
 
 | Variable | Required | Purpose | Affects |
 | --- | --- | --- | --- |
-| `PRODUCT_RESEARCH_AI_PROVIDER` | Recommended | Selects active AI provider | Product research AI routing |
-| `MIMO_API_KEY` | Required for real MiMo calls | MiMo API access | Candidate generation, scoring reasons, copy generation |
-| `MIMO_BASE_URL` | Recommended | MiMo API base URL | AI client setup |
+| `PRODUCT_RESEARCH_AI_PROVIDER` | Recommended | Selects active AI provider | Product research + SEO AI routing |
+| `MIMO_API_KEY` | Required for real MiMo calls | MiMo API access | Candidate generation, SEO rewrites, Agent (planned) |
+| `MIMO_ANTHROPIC_BASE_URL` | **Recommended (Token Plan)** | Anthropic-compatible root | `llm-json-completion` + Agent turns |
+| `MIMO_BASE_URL` | Recommended | OpenAI-compatible root | Fallback / non–Token Plan keys |
 | `MIMO_MODEL_CANDIDATE_GENERATION` | Recommended | Model for candidate idea generation | AI import preview/commit |
-| `MIMO_MODEL_SCORING` | Recommended | Model for scoring rationale | Product research scoring |
-| `MIMO_MODEL_COPY` | Recommended | Model for landing/ad/supplier copy drafts | Product research copy helpers |
-| `MIMO_MODEL_FAST` | Optional | Lower-cost, faster model for lightweight tasks | Batch / fallback AI tasks |
+| `MIMO_MODEL_SCORING` | Recommended | Model slot (metadata / future) | Scoring rationale (not LLM-scored today) |
+| `MIMO_MODEL_COPY` | Recommended | Model for copy drafts | SEO + product research copy slot |
+| `MIMO_MODEL_SEO_COPY` | Optional | SEO-specific copy model | SEO `seo-ai-runtime` (falls back to copy slot) |
+| `MIMO_MODEL_FAST` | Optional | Lower-cost, faster model | Guard / lightweight tasks (planned) |
 
 ### OpenAI
 
@@ -169,14 +180,13 @@ If official Alibaba API access is added later, define variables only after the r
 - `GA4_CLIENT_EMAIL`
 - `GA4_PRIVATE_KEY`
 
-### Required for real AI Product Research with MiMo
+### Required for real AI (MiMo Token Plan)
 
-- `PRODUCT_RESEARCH_AI_PROVIDER`
+- `PRODUCT_RESEARCH_AI_PROVIDER=mimo`
 - `MIMO_API_KEY`
-- `MIMO_BASE_URL`
+- `MIMO_ANTHROPIC_BASE_URL` (e.g. `https://token-plan-cn.xiaomimimo.com/anthropic`)
 - `MIMO_MODEL_CANDIDATE_GENERATION`
-- `MIMO_MODEL_SCORING`
-- `MIMO_MODEL_COPY`
+- `MIMO_MODEL_COPY` (SEO rewrites use this or `MIMO_MODEL_SEO_COPY`)
 
 ### Required for real AI Product Research with OpenAI
 
@@ -223,6 +233,7 @@ OPENAI_MODEL_COPY="gpt-5-mini"
 
 PRODUCT_RESEARCH_AI_PROVIDER="mimo"
 MIMO_API_KEY="mimo_mock_replace_me"
+MIMO_ANTHROPIC_BASE_URL="https://token-plan-cn.xiaomimimo.com/anthropic"
 MIMO_BASE_URL="https://api.xiaomimimo.com/v1"
 MIMO_MODEL_CANDIDATE_GENERATION="mimo-v2.5-pro"
 MIMO_MODEL_SCORING="mimo-v2.5-pro"
@@ -240,7 +251,31 @@ TIKTOK_CLIENT_KEY=""
 TIKTOK_CLIENT_SECRET=""
 ```
 
-## 8. Notes
+## 8. Feishu Inventory Alerts
+
+> 完整支付/库存优化方案与架构图见 [order-payment-inventory.md](./order-payment-inventory.md)。
+
+Used when a paid order is marked `inventoryStatus = SHORT` (payment succeeded but stock confirmation failed).
+
+| Variable | Required | Purpose | Affects |
+| --- | --- | --- | --- |
+| `FEISHU_ALERT_ENABLED` | Optional | Master switch (`true` / `false`) | Whether alerts are attempted |
+| `FEISHU_APP_ID` | Required for live send | Feishu app ID | Tenant access token |
+| `FEISHU_APP_SECRET` | Required for live send | Feishu app secret | Tenant access token |
+| `FEISHU_ALERT_CHAT_ID` | Required for live send | Target group `chat_id` | Message destination |
+
+### Placeholder / mock mode
+
+If any credential still contains placeholders such as `replace_me` or `cli_replace_me`, the API **does not call Feishu**. It logs a `feishu.mock_send` preview to `api.log` instead.
+
+### How to get them
+
+1. Create a Feishu custom app in [Feishu Open Platform](https://open.feishu.cn/app).
+2. Enable bot capability and add the `im:message` permission (send messages).
+3. Copy **App ID** and **App Secret** into `FEISHU_APP_ID` / `FEISHU_APP_SECRET`.
+4. Add the bot to the target group, then read the group **chat_id** (starts with `oc_`) into `FEISHU_ALERT_CHAT_ID`.
+
+## 9. Notes
 
 - Keep all secrets server-side except `NEXT_PUBLIC_*`.
 - Do not commit real private keys or production secrets.

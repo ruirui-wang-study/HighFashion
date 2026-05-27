@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { getInventoryLevel } from "./inventory-policy";
+import { getAvailableStock, getInventoryLevel } from "./inventory-policy";
 
 export const adminProductInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
@@ -22,7 +22,9 @@ type AdminProductRecord = Prisma.ProductGetPayload<{ include: typeof adminProduc
 type InventoryVariantRecord = Prisma.ProductVariantGetPayload<{ include: typeof inventoryVariantInclude }>;
 
 export function mapAdminProduct(product: AdminProductRecord) {
-  const totalStock = product.variants.filter((variant) => variant.active).reduce((sum, variant) => sum + variant.stock, 0);
+  const totalStock = product.variants
+    .filter((variant) => variant.active)
+    .reduce((sum, variant) => sum + getAvailableStock(variant), 0);
   const lowStockVariants = product.variants.filter((variant) => variant.active && getInventoryLevel(variant) === "low_stock").length;
   const outOfStockVariants = product.variants.filter((variant) => variant.active && getInventoryLevel(variant) === "out_of_stock").length;
 
@@ -75,6 +77,8 @@ export function mapAdminProduct(product: AdminProductRecord) {
       priceCents: variant.priceCents,
       compareAtPriceCents: variant.compareAtPriceCents,
       stock: variant.stock,
+      reservedStock: variant.reservedStock,
+      availableStock: getAvailableStock(variant),
       lowStockThreshold: variant.lowStockThreshold,
       weightGrams: variant.weightGrams,
       active: variant.active,
@@ -99,6 +103,8 @@ export function mapInventoryVariant(variant: InventoryVariantRecord) {
     priceCents: variant.priceCents,
     compareAtPriceCents: variant.compareAtPriceCents,
     stock: variant.stock,
+    reservedStock: variant.reservedStock,
+    availableStock: getAvailableStock(variant),
     lowStockThreshold: variant.lowStockThreshold,
     weightGrams: variant.weightGrams,
     active: variant.active,

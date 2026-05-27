@@ -97,14 +97,23 @@ export class AiConfigService {
     const envMap = PROVIDER_ENV_MAP[provider];
     const apiKey = this.config.get<string>(envMap.apiKey) ?? null;
 
+    const resolvedBaseUrl =
+      provider === "mimo"
+        ? firstNonEmpty([
+            ...AI_SETTING_KEYS.baseUrl.map((key) => settingMap.get(key)),
+            this.config.get<string>("AI_BASE_URL"),
+            this.config.get<string>("MIMO_ANTHROPIC_BASE_URL"),
+            this.config.get<string>("MIMO_BASE_URL"),
+          ])
+        : firstNonEmpty([
+            ...AI_SETTING_KEYS.baseUrl.map((key) => settingMap.get(key)),
+            this.config.get<string>("AI_BASE_URL"),
+            envMap.baseUrl ? this.config.get<string>(envMap.baseUrl) : null,
+          ]);
+
     return {
       provider,
-      baseUrl:
-        firstNonEmpty([
-          ...AI_SETTING_KEYS.baseUrl.map((key) => settingMap.get(key)),
-          this.config.get<string>("AI_BASE_URL"),
-          envMap.baseUrl ? this.config.get<string>(envMap.baseUrl) : null,
-        ]) ?? null,
+      baseUrl: resolvedBaseUrl ?? null,
       models: {
         seoCopy: this.resolveModel(settingMap, "seoCopy", provider),
         productResearchCandidate: this.resolveModel(settingMap, "productResearchCandidate", provider),

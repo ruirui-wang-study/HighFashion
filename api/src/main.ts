@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/http-exception.filter";
 import { FileLogger } from "./common/file-logger";
+import { RequestMetricsInterceptor } from "./common/request-metrics.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false, logger: new FileLogger() });
@@ -21,6 +22,7 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new ApiExceptionFilter());
+  app.useGlobalInterceptors(new RequestMetricsInterceptor());
 
   const port = config.get<number>("PORT") ?? 4000;
   await app.listen(port);

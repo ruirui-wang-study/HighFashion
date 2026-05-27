@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 import { PrismaService } from "../common/prisma.service";
 import { ProductQueryDto } from "./dto/product-query.dto";
-import { getInventoryLevel } from "../admin-products/inventory-policy";
+import { getAvailableStock, getInventoryLevel } from "../admin-products/inventory-policy";
 
 const productInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
@@ -97,7 +97,7 @@ export function mapProduct(product: ProductWithRelations, locale: "en" | "zh" = 
       size: variant.size,
       priceCents: variant.priceCents,
       compareAtPriceCents: variant.compareAtPriceCents,
-      stock: variant.stock,
+      stock: getAvailableStock(variant),
       lowStockThreshold: variant.lowStockThreshold,
       weightGrams: variant.weightGrams,
       active: variant.active,

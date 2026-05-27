@@ -1,29 +1,53 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSeoChangeLog } from "@/lib/admin-api";
 import { useLocale } from "@/components/locale-provider";
 import type { SeoChangeLogItem } from "@/lib/seo-automation-types";
 import { AdminPageHeader } from "./admin-page-header";
 import { AdminSeoNav } from "./admin-seo-nav";
 
+const PAGE_SIZE = 20;
+
 export function AdminSeoChangeLogPageClient() {
   const { locale } = useLocale();
   const zh = locale === "zh";
   const localeTag = zh ? "zh-CN" : "en-US";
   const [items, setItems] = useState<SeoChangeLogItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getSeoChangeLog()
-      .then((next) => {
-        setItems(next);
+  const loadPage = useCallback(
+    async (nextPage: number, append: boolean) => {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      try {
+        const result = await getSeoChangeLog({ page: nextPage, pageSize: PAGE_SIZE });
+        setItems((current) => (append ? [...current, ...result.items] : result.items));
+        setPage(result.page);
+        setTotalPages(result.totalPages);
         setError(null);
-      })
-      .catch((nextError) => {
+      } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : zh ? "加载变更日志失败" : "Failed to load change log");
-      });
-  }, [zh]);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [zh],
+  );
+
+  useEffect(() => {
+    void loadPage(1, false);
+  }, [loadPage]);
+
+  const canLoadMore = page < totalPages;
 
   return (
     <div className="space-y-6">
@@ -42,6 +66,13 @@ export function AdminSeoChangeLogPageClient() {
             </tr>
           </thead>
           <tbody>
+            {loading && items.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-muted">
+                  {zh ? "加载中…" : "Loading…"}
+                </td>
+              </tr>
+            ) : null}
             {items.map((item) => (
               <tr key={item.id} className="border-b border-graphite/5">
                 <td className="px-3 py-4 font-bold text-graphite">{item.action}</td>
@@ -53,6 +84,18 @@ export function AdminSeoChangeLogPageClient() {
             ))}
           </tbody>
         </table>
+        {canLoadMore ? (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={() => void loadPage(page + 1, true)}
+              className="rounded-full border border-graphite/15 px-5 py-2 text-sm font-bold text-graphite transition hover:border-graphite disabled:opacity-50"
+            >
+              {loadingMore ? (zh ? "加载中…" : "Loading…") : zh ? "加载更多" : "Load more"}
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

@@ -162,7 +162,13 @@ function createPrismaMock() {
         seoChangeLogs.push(created);
         return Promise.resolve(created);
       }),
-      findMany: jest.fn().mockImplementation(() => Promise.resolve([...seoChangeLogs].sort((a, b) => Number((b.createdAt as Date)) - Number((a.createdAt as Date))))),
+      count: jest.fn().mockImplementation(() => Promise.resolve(seoChangeLogs.length)),
+      findMany: jest.fn().mockImplementation((args?: { skip?: number; take?: number }) => {
+        const sorted = [...seoChangeLogs].sort((a, b) => Number((b.createdAt as Date)) - Number((a.createdAt as Date)));
+        const skip = args?.skip ?? 0;
+        const take = args?.take ?? sorted.length;
+        return Promise.resolve(sorted.slice(skip, skip + take));
+      }),
     },
     auditLog: {
       create: jest.fn().mockResolvedValue({ id: "audit_1" }),
@@ -266,7 +272,7 @@ describe("SeoAutomationService", () => {
 
     expect(recommendations.find((item) => item.id === "rec_1")?.status).toBe("APPLIED");
     expect(links.find((item) => item.id === "link_1")?.status).toBe("APPLIED");
-    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.items.length).toBeGreaterThan(0);
   });
 
   it("uses deepseek to rewrite recommendation drafts when ai provider is configured", async () => {
@@ -577,6 +583,67 @@ describe("SeoAutomationService", () => {
     }
   });
 
+  it("uses mimo anthropic to rewrite recommendation drafts when token plan is configured", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "mimo" },
+      { key: "product_research.ai.model_copy", value: "mimo-v2.5-pro" },
+    ]);
+
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        stop_reason: "end_turn",
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              items: [
+                {
+                  id: "rec_1",
+                  reason: "MiMo rewrite reason.",
+                  draftPayload: {
+                    seoTitle: "MiMo Title | PulseGear",
+                  },
+                },
+              ],
+            }),
+          },
+        ],
+      }),
+    });
+
+    const originalFetch = global.fetch;
+    const service = new SeoAutomationService(
+      prisma,
+      new ConfigService({
+        MIMO_API_KEY: "test-key",
+        MIMO_ANTHROPIC_BASE_URL: "https://token-plan-cn.xiaomimimo.com/anthropic",
+      }),
+    );
+    global.fetch = fetchMock as typeof global.fetch;
+
+    try {
+      const recommendations = await service.generateRecommendations();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://token-plan-cn.xiaomimimo.com/anthropic/v1/messages",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({ "api-key": "test-key" }),
+        }),
+      );
+      expect(recommendations.find((item) => item.id === "rec_1")?.draftPayload).toMatchObject({
+        seoTitle: "MiMo Title | PulseGear",
+      });
+      expect(recommendations.find((item) => item.id === "rec_1")?.reason).toBe("MiMo rewrite reason.");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it("includes ai provider status in seo automation overview", async () => {
     const prisma = createPrismaMock() as PrismaService & {
       siteSetting: { findMany: jest.Mock };
@@ -597,6 +664,34 @@ describe("SeoAutomationService", () => {
       fallbackProvider: "local",
       baseUrl: "https://api.deepseek.com",
       model: "deepseek-v4-pro",
+      apiKeyConfigured: true,
+    });
+  });
+
+  it("reports mimo token plan as effective seo ai provider", async () => {
+    const prisma = createPrismaMock() as PrismaService & {
+      siteSetting: { findMany: jest.Mock };
+    };
+    prisma.siteSetting.findMany.mockResolvedValue([
+      { key: "product_research.ai.provider", value: "mimo" },
+      { key: "product_research.ai.model_copy", value: "mimo-v2.5-pro" },
+    ]);
+
+    const service = new SeoAutomationService(
+      prisma,
+      new ConfigService({
+        MIMO_API_KEY: "test-key",
+        MIMO_ANTHROPIC_BASE_URL: "https://token-plan-cn.xiaomimimo.com/anthropic",
+      }),
+    );
+
+    const overview = await service.getOverview();
+
+    expect(overview.aiStatus).toMatchObject({
+      configuredProvider: "mimo",
+      effectiveProvider: "mimo",
+      baseUrl: "https://token-plan-cn.xiaomimimo.com/anthropic",
+      model: "mimo-v2.5-pro",
       apiKeyConfigured: true,
     });
   });

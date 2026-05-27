@@ -1,7 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AiConfigService } from "../ai/ai-config.service";
-import type { AiResolvedConfig } from "../ai/ai-config.types";
+import type { AiProviderKind, AiResolvedConfig } from "../ai/ai-config.types";
+import { completeLlmJson, parseLlmJsonPayload } from "../ai/llm-json-completion";
 import type { ProductSeoDraft } from "./seo-automation.types";
 
 type SeoAiStatus = {
@@ -15,6 +16,8 @@ type SeoAiStatus = {
 
 @Injectable()
 export class SeoAiRuntimeService {
+  private readonly logger = new Logger(SeoAiRuntimeService.name);
+
   constructor(
     private readonly aiConfigService: AiConfigService,
     private readonly config: ConfigService = new ConfigService(),
@@ -23,12 +26,13 @@ export class SeoAiRuntimeService {
   async getStatus(): Promise<SeoAiStatus> {
     const aiConfig = await this.aiConfigService.resolve();
     const model = this.resolveSeoCopyModel(aiConfig);
+    const llm = this.resolveLlmEndpoints(aiConfig);
 
     return {
       configuredProvider: aiConfig.provider,
-      effectiveProvider: this.canUseSeoCopy(aiConfig, model) ? aiConfig.provider : aiConfig.fallbackProvider,
+      effectiveProvider: this.canUseSeoCopy(aiConfig, model, llm) ? aiConfig.provider : aiConfig.fallbackProvider,
       fallbackProvider: aiConfig.fallbackProvider,
-      baseUrl: aiConfig.baseUrl,
+      baseUrl: llm.displayBaseUrl,
       model,
       apiKeyConfigured: aiConfig.apiKeyConfigured,
     };
@@ -233,53 +237,53 @@ export class SeoAiRuntimeService {
   }): Promise<T | null> {
     const aiConfig = await this.aiConfigService.resolve();
     const model = this.resolveSeoCopyModel(aiConfig);
-    if (!this.canUseSeoCopy(aiConfig, model)) {
+    const llm = this.resolveLlmEndpoints(aiConfig);
+
+    if (!this.canUseSeoCopy(aiConfig, model, llm)) {
       return null;
     }
 
     const apiKey = this.aiConfigService.getApiKey(aiConfig.provider);
-    if (!apiKey) {
+    if (!apiKey || !model) {
       return null;
     }
 
-    const prompt = JSON.stringify({
+    const userPrompt = JSON.stringify({
       task: input.task,
       ...input.payload,
     });
 
     try {
-      const response = await fetch(`${aiConfig.baseUrl!.replace(/\/+$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: this.buildHeaders(aiConfig.provider, apiKey),
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: input.systemPrompt },
-            { role: "user", content: prompt },
-          ],
-          thinking: { type: "disabled" },
-          max_tokens: input.maxTokens,
-          temperature: input.temperature,
-          response_format: { type: "json_object" },
-        }),
+      const result = await completeLlmJson({
+        provider: aiConfig.provider as Exclude<AiProviderKind, "local">,
+        apiKey,
+        model,
+        systemPrompt: input.systemPrompt,
+        userPrompt,
+        maxTokens: input.maxTokens,
+        temperature: input.temperature,
+        anthropicBaseUrl: llm.anthropicBaseUrl,
+        openAiBaseUrl: llm.openAiBaseUrl,
       });
 
-      if (!response.ok) {
+      if (!result || result.truncated) {
+        if (result?.truncated) {
+          this.logger.warn(`SEO AI JSON truncated for task ${input.task}`);
+        }
         return null;
       }
 
-      const payload = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string | null }; finish_reason?: string | null }>;
-      };
-      const rawContent = payload.choices?.[0]?.message?.content ?? "";
-      const finishReason = payload.choices?.[0]?.finish_reason ?? null;
-      const parsed = parseAiJsonPayload(rawContent);
-      if (finishReason === "length" || !parsed) {
+      const parsed = parseLlmJsonPayload(result.rawContent);
+      if (!parsed) {
+        this.logger.warn(`SEO AI JSON parse failed for task ${input.task}`);
         return null;
       }
 
       return parsed as T;
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `SEO AI request failed for task ${input.task} (${error instanceof Error ? error.message : "unknown error"})`,
+      );
       return null;
     }
   }
@@ -288,38 +292,40 @@ export class SeoAiRuntimeService {
     return aiConfig.models.seoCopy ?? aiConfig.models.productResearchCopy ?? aiConfig.models.productResearchScoring ?? aiConfig.models.productResearchCandidate;
   }
 
-  private canUseSeoCopy(aiConfig: AiResolvedConfig, model: string | null) {
-    return aiConfig.provider === "deepseek" && aiConfig.apiKeyConfigured && Boolean(aiConfig.baseUrl) && Boolean(model);
-  }
+  private resolveLlmEndpoints(aiConfig: AiResolvedConfig) {
+    const anthropicBaseUrl =
+      aiConfig.provider === "mimo" ? this.config.get<string>("MIMO_ANTHROPIC_BASE_URL")?.trim() || null : null;
 
-  private buildHeaders(provider: AiResolvedConfig["provider"], apiKey: string): Record<string, string> {
-    if (provider === "mimo") {
-      return {
-        "Content-Type": "application/json",
-        "api-key": apiKey,
-      };
-    }
+    const openAiBaseUrl =
+      aiConfig.provider === "mimo" && anthropicBaseUrl
+        ? this.config.get<string>("MIMO_BASE_URL")?.trim() || null
+        : aiConfig.baseUrl;
 
     return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      anthropicBaseUrl,
+      openAiBaseUrl: anthropicBaseUrl ? openAiBaseUrl : aiConfig.baseUrl,
+      displayBaseUrl: anthropicBaseUrl ?? aiConfig.baseUrl,
     };
   }
-}
 
-function parseAiJsonPayload(raw: string) {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (!fenceMatch) return null;
-    try {
-      return JSON.parse(fenceMatch[1]?.trim() ?? "");
-    } catch {
-      return null;
+  private canUseSeoCopy(
+    aiConfig: AiResolvedConfig,
+    model: string | null,
+    llm: ReturnType<SeoAiRuntimeService["resolveLlmEndpoints"]>,
+  ) {
+    if (!aiConfig.apiKeyConfigured || !model) {
+      return false;
     }
+
+    if (aiConfig.provider === "deepseek") {
+      return Boolean(llm.openAiBaseUrl);
+    }
+
+    if (aiConfig.provider === "mimo") {
+      return Boolean(llm.anthropicBaseUrl || llm.openAiBaseUrl);
+    }
+
+    return false;
   }
 }
 

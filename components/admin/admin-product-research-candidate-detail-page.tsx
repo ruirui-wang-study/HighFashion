@@ -8,11 +8,13 @@ import {
   createProductResearchDecision,
   createProductResearchTestLaunch,
   getProductResearchCandidate,
+  getProductResearchCandidateScores,
+  getProductResearchCandidateSignals,
   recalculateProductResearchCandidate,
   resolveProductResearchRiskFlag,
 } from "@/lib/admin-api";
 import { useLocale } from "@/components/locale-provider";
-import type { ProductResearchCandidateDetail } from "@/lib/product-research-types";
+import type { ProductResearchCandidateDetail, ProductResearchCandidateScore, ProductResearchCandidateSignal } from "@/lib/product-research-types";
 import { AdminProductResearchSectionShell } from "./admin-product-research-section-shell";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/utils";
@@ -32,10 +34,26 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
   const [testViews, setTestViews] = useState("120");
   const [testAtc, setTestAtc] = useState("8");
   const [testPurchases, setTestPurchases] = useState("2");
+  const [scores, setScores] = useState<ProductResearchCandidateScore[]>([]);
+  const [signals, setSignals] = useState<ProductResearchCandidateSignal[]>([]);
+  const [scoresPage, setScoresPage] = useState(1);
+  const [signalsPage, setSignalsPage] = useState(1);
+  const [scoresHasMore, setScoresHasMore] = useState(false);
+  const [signalsHasMore, setSignalsHasMore] = useState(false);
 
   async function fetchCandidate() {
-    const result = await getProductResearchCandidate(id);
+    const [result, scoresResult, signalsResult] = await Promise.all([
+      getProductResearchCandidate(id),
+      getProductResearchCandidateScores(id, { page: 1, pageSize: 5 }),
+      getProductResearchCandidateSignals(id, { page: 1, pageSize: 8 }),
+    ]);
     setData(result);
+    setScores(scoresResult.items);
+    setSignals(signalsResult.items);
+    setScoresPage(scoresResult.page);
+    setSignalsPage(signalsResult.page);
+    setScoresHasMore(scoresResult.page < scoresResult.totalPages);
+    setSignalsHasMore(signalsResult.page < signalsResult.totalPages);
     setError(null);
   }
 
@@ -81,6 +99,22 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
     } finally {
       setBusy(null);
     }
+  }
+
+  async function loadMoreScores() {
+    const nextPage = scoresPage + 1;
+    const result = await getProductResearchCandidateScores(id, { page: nextPage, pageSize: 5 });
+    setScores((current) => [...current, ...result.items]);
+    setScoresPage(result.page);
+    setScoresHasMore(result.page < result.totalPages);
+  }
+
+  async function loadMoreSignals() {
+    const nextPage = signalsPage + 1;
+    const result = await getProductResearchCandidateSignals(id, { page: nextPage, pageSize: 8 });
+    setSignals((current) => [...current, ...result.items]);
+    setSignalsPage(result.page);
+    setSignalsHasMore(result.page < result.totalPages);
   }
 
   return (
@@ -225,8 +259,8 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
             <section className="rounded-3xl bg-white p-6">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "分数历史" : "Score History"}</p>
               <div className="mt-4 space-y-3">
-                {data.scores.length === 0 ? <p className="text-sm text-muted">{zh ? "还没有分数快照。" : "No score snapshots yet."}</p> : null}
-                {data.scores.slice(0, 5).map((score) => (
+                {scores.length === 0 ? <p className="text-sm text-muted">{zh ? "还没有分数快照。" : "No score snapshots yet."}</p> : null}
+                {scores.map((score) => (
                   <div key={score.id} className="rounded-2xl bg-warm p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold text-graphite">{score.finalScore}</p>
@@ -235,14 +269,19 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
                     <p className="mt-2 text-sm text-muted">{new Date(score.createdAt).toLocaleString(locale === "zh" ? "zh-CN" : "en-US")}</p>
                   </div>
                 ))}
+                {scoresHasMore ? (
+                  <Button size="sm" variant="outline" disabled={busy === "scores-more"} onClick={() => void runAction("scores-more", loadMoreScores)}>
+                    {zh ? "加载更多分数" : "Load More Scores"}
+                  </Button>
+                ) : null}
               </div>
             </section>
 
             <section className="rounded-3xl bg-white p-6">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{zh ? "市场信号" : "Market Signals"}</p>
               <div className="mt-4 space-y-3">
-                {data.signals.length === 0 ? <p className="text-sm text-muted">{zh ? "还没有采集信号。" : "No signals collected yet."}</p> : null}
-                {data.signals.slice(0, 8).map((signal) => (
+                {signals.length === 0 ? <p className="text-sm text-muted">{zh ? "还没有采集信号。" : "No signals collected yet."}</p> : null}
+                {signals.map((signal) => (
                   <div key={signal.id} className="rounded-2xl bg-warm p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold text-graphite">{signal.metricName}</p>
@@ -251,6 +290,11 @@ export function AdminProductResearchCandidateDetailPageClient({ id }: { id: stri
                     <ProgressBar label={zh ? "信号" : "Signal"} value={signal.metricValue} inverse={false} accent="lime" />
                   </div>
                 ))}
+                {signalsHasMore ? (
+                  <Button size="sm" variant="outline" disabled={busy === "signals-more"} onClick={() => void runAction("signals-more", loadMoreSignals)}>
+                    {zh ? "加载更多信号" : "Load More Signals"}
+                  </Button>
+                ) : null}
               </div>
             </section>
           </div>

@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { completeLlmJson, parseLlmJsonPayload } from "../ai/llm-json-completion";
 import type { CandidateImportDraft } from "./product-research.provider";
 
 type MimoGenerateInput = {
@@ -8,97 +9,77 @@ type MimoGenerateInput = {
   count: number;
 };
 
+type MimoProviderConfig = {
+  apiKey: string;
+  model: string;
+  /** OpenAI-compatible root, e.g. https://api.xiaomimimo.com/v1 */
+  baseUrl?: string;
+  /** Anthropic-compatible root, e.g. https://token-plan-cn.xiaomimimo.com/anthropic */
+  anthropicBaseUrl?: string;
+};
+
 @Injectable()
 export class MimoProductResearchProvider {
-  async generateCandidates(
-    input: MimoGenerateInput,
-    config: {
-      apiKey: string;
-      baseUrl: string;
-      model: string;
-    },
-  ): Promise<CandidateImportDraft[]> {
+  async generateCandidates(input: MimoGenerateInput, config: MimoProviderConfig): Promise<CandidateImportDraft[]> {
+    const userPrompt = buildUserPrompt(input);
     const systemPrompt =
       "You are a product research assistant for a sports accessories DTC brand focused on US and UK markets. Return strict JSON only.";
-    const userPrompt = JSON.stringify({
-      task: "generate_product_candidates",
-      constraints: {
-        brandDirection: input.brandDirection ?? "performance utility",
-        targetMarket: input.targetMarket ?? "US",
-        excludedCategories: input.excludedCategories ?? [],
-        count: input.count,
-      },
-      outputSchema: {
-        items: [
-          {
-            productName: "string",
-            category: "string",
-            targetAudience: "string",
-            useCase: "string",
-            description: "string",
-            brandAngle: "string",
-            positioningSummary: "string",
-            alibabaKeywords: "string",
-            seoTitleDraft: "string",
-            seoDescriptionDraft: "string",
-            features: ["string"],
-            benefits: ["string"],
-          },
-        ],
-      },
-      rules: [
-        "Only propose sports accessories and adjacent low-risk products.",
-        "Avoid medical treatment, supplements, electronics, heated products, replica products, and unsafe categories.",
-        "Keep output concise and commercially realistic for US and UK DTC testing.",
-      ],
+
+    const result = await completeLlmJson({
+      provider: "mimo",
+      apiKey: config.apiKey,
+      model: config.model,
+      systemPrompt,
+      userPrompt,
+      maxTokens: 1800,
+      temperature: 0.7,
+      anthropicBaseUrl: config.anthropicBaseUrl,
+      openAiBaseUrl: config.baseUrl,
     });
 
-    const response = await fetch(`${config.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": config.apiKey,
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_completion_tokens: 1800,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`MiMo request failed with status ${response.status}`);
+    if (!result?.rawContent) {
+      throw new Error("MiMo request returned no content");
     }
 
-    const payload = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
-    };
-    const rawContent = payload.choices?.[0]?.message?.content ?? "";
-    const parsed = parseJsonPayload(rawContent);
+    const parsed = parseLlmJsonPayload(result.rawContent) as Record<string, unknown> | null;
     const items = Array.isArray(parsed?.items) ? parsed.items : [];
-
     return items.slice(0, input.count).map((item, index) => normalizeMimoCandidate(item, input, index));
   }
 }
 
-function parseJsonPayload(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  try {
-    return JSON.parse(trimmed) as Record<string, unknown>;
-  } catch {
-    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (!fenced?.[1]) return null;
-    try {
-      return JSON.parse(fenced[1]) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  }
+function buildUserPrompt(input: MimoGenerateInput) {
+  return JSON.stringify({
+    task: "generate_product_candidates",
+    constraints: {
+      brandDirection: input.brandDirection ?? "performance utility",
+      targetMarket: input.targetMarket ?? "US",
+      excludedCategories: input.excludedCategories ?? [],
+      count: input.count,
+    },
+    outputSchema: {
+      items: [
+        {
+          productName: "string",
+          category: "string",
+          targetAudience: "string",
+          useCase: "string",
+          description: "string",
+          brandAngle: "string",
+          positioningSummary: "string",
+          alibabaKeywords: "string",
+          seoTitleDraft: "string",
+          seoDescriptionDraft: "string",
+          features: ["string"],
+          benefits: ["string"],
+        },
+      ],
+    },
+    rules: [
+      "Only propose sports accessories and adjacent low-risk products.",
+      "Avoid medical treatment, supplements, electronics, heated products, replica products, and unsafe categories.",
+      "Keep output concise and commercially realistic for US and UK DTC testing.",
+    ],
+  });
 }
 
 function normalizeMimoCandidate(item: unknown, input: MimoGenerateInput, index: number): CandidateImportDraft {

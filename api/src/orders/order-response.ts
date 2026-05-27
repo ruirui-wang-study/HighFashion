@@ -37,6 +37,7 @@ type OrderLike = {
   status: string;
   createdAt?: Date;
   paymentStatus: string;
+  inventoryStatus?: string;
   fulfillmentStatus: string;
   fulfilledAt?: Date | null;
   currency: string;
@@ -61,6 +62,7 @@ export function normalizeOrderResponse(order: OrderLike) {
     status: order.status,
     createdAt: order.createdAt?.toISOString() ?? null,
     paymentStatus: order.paymentStatus,
+    inventoryStatus: order.inventoryStatus ?? "OK",
     fulfillmentStatus: order.fulfillmentStatus,
     fulfilledAt: order.fulfilledAt?.toISOString() ?? null,
     currency: order.currency,

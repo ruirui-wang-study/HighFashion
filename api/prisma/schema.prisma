@@ -27,6 +27,13 @@ enum InventoryMovementType {
   SALE
   ADJUSTMENT
   RESTOCK
+  RESERVATION
+  RELEASE
+}
+
+enum OrderInventoryStatus {
+  OK
+  SHORT
 }
 
 enum AdminRoleName {
@@ -852,6 +859,7 @@ model ProductVariant {
   priceCents            Int
   compareAtPriceCents   Int?
   stock                 Int                 @default(0)
+  reservedStock         Int                 @default(0)
   lowStockThreshold     Int                 @default(5)
   weightGrams           Int?
   active                Boolean             @default(true)
@@ -909,8 +917,9 @@ model Order {
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?
   paymentMethodType       String?
-  paymentStatus           PaymentStatus     @default(PENDING)
-  fulfillmentStatus       FulfillmentStatus @default(UNFULFILLED)
+  paymentStatus           PaymentStatus           @default(PENDING)
+  inventoryStatus         OrderInventoryStatus    @default(OK)
+  fulfillmentStatus       FulfillmentStatus       @default(UNFULFILLED)
   fulfilledAt             DateTime?
   customerCountry         String?
   shippingAddress         Json?
@@ -998,6 +1007,7 @@ model InventoryMovement {
   variant     ProductVariant        @relation(fields: [variantId], references: [id])
   order       Order?                @relation(fields: [orderId], references: [id])
 
+  @@unique([orderId, variantId, type])
   @@index([variantId])
   @@index([orderId])
 }

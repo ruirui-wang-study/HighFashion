@@ -175,6 +175,7 @@ export class ProductResearchImportService {
     let createdCount = 0;
     let duplicateCount = 0;
     let skippedCount = 0;
+    const candidateIdsToAssess: string[] = [];
 
     for (const row of normalized) {
       const existingSupplier = row.supplierUrl
@@ -219,7 +220,7 @@ export class ProductResearchImportService {
           },
           update: row.quoteData,
         });
-        await this.assessmentService.refreshCandidateAssessment(candidate.id, actor);
+        candidateIdsToAssess.push(candidate.id);
       }
 
       createdCount += 1;
@@ -251,11 +252,19 @@ export class ProductResearchImportService {
       },
     });
 
+    const queuedAssessmentCount = this.assessmentService.enqueueCandidateAssessments(
+      candidateIdsToAssess,
+      actor,
+      "supplier-import",
+    );
+
     return {
       batchId: batch.id,
       importedCount: createdCount,
       duplicateCount,
       skippedCount,
+      queuedAssessmentCount,
+      background: queuedAssessmentCount > 0,
     };
   }
 
@@ -403,9 +412,9 @@ export class ProductResearchImportService {
       assessmentIds.push(created.id);
     }
 
-    if (assessmentIds.length > 0) {
-      await this.assessmentService.refreshCandidateAssessments(assessmentIds, input.actor);
-    }
+    const queuedAssessmentCount = assessmentIds.length > 0
+      ? this.assessmentService.enqueueCandidateAssessments(assessmentIds, input.actor, "import-batch")
+      : 0;
 
     await this.prisma.productResearchImportBatch.update({
       where: { id: input.batchId },
@@ -439,6 +448,8 @@ export class ProductResearchImportService {
       duplicateCount,
       skippedCount,
       createdIds,
+      queuedAssessmentCount,
+      background: queuedAssessmentCount > 0,
     };
   }
 

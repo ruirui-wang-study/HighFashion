@@ -41,12 +41,20 @@ export class ProductResearchRuntimeService {
       }
     }
 
-    if (aiConfig.provider === "mimo" && aiConfig.apiKeyConfigured && aiConfig.baseUrl && aiConfig.candidateModel) {
+    const mimoAnthropicBaseUrl = this.config.get<string>("MIMO_ANTHROPIC_BASE_URL")?.trim() || null;
+    const mimoConfigured =
+      aiConfig.provider === "mimo" &&
+      aiConfig.apiKeyConfigured &&
+      aiConfig.candidateModel &&
+      Boolean(mimoAnthropicBaseUrl || aiConfig.baseUrl);
+
+    if (mimoConfigured) {
       try {
         return await this.mimoProvider.generateCandidates(input, {
           apiKey: this.config.get<string>("MIMO_API_KEY")!,
-          baseUrl: aiConfig.baseUrl,
-          model: aiConfig.candidateModel,
+          anthropicBaseUrl: mimoAnthropicBaseUrl ?? undefined,
+          baseUrl: aiConfig.baseUrl ?? undefined,
+          model: aiConfig.candidateModel!,
         });
       } catch (error) {
         this.logger.warn(

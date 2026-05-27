@@ -164,12 +164,15 @@ export class AdminAnalyticsService {
       orderBy: [{ stock: "asc" }, { updatedAt: "desc" }],
     });
     return variants
-      .filter((variant) => variant.stock <= variant.lowStockThreshold)
+      .filter((variant) => {
+        const available = Math.max(0, variant.stock - (variant.reservedStock ?? 0));
+        return available <= variant.lowStockThreshold;
+      })
       .slice(0, 5)
       .map((variant: LowStockVariantRecord) => ({
         variantId: variant.id,
         sku: variant.sku,
-        stock: variant.stock,
+        stock: Math.max(0, variant.stock - (variant.reservedStock ?? 0)),
         lowStockThreshold: variant.lowStockThreshold,
         product: variant.product,
       }));

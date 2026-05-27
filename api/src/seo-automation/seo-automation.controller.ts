@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { HistoryQueryDto } from "../common/dto/history-query.dto";
 import type { AdminRoleName } from "@prisma/client";
 import type { Request } from "express";
 import { AdminAuthGuard } from "../admin-auth/admin-auth.guard";
@@ -6,6 +7,7 @@ import { AdminRoles } from "../admin-auth/admin-roles.decorator";
 import { ok } from "../common/api-response";
 import type { ProductSeoDraft } from "./seo-automation.types";
 import { SeoAutomationService } from "./seo-automation.service";
+import { ApiTags } from "@nestjs/swagger";
 
 type RequestWithAdmin = Request & {
   adminSession?: { sub: string; email: string; role: AdminRoleName };
@@ -13,6 +15,7 @@ type RequestWithAdmin = Request & {
 
 @Controller("admin/seo")
 @UseGuards(AdminAuthGuard)
+@ApiTags("admin-seo-automation")
 export class SeoAutomationController {
   constructor(private readonly seoAutomationService: SeoAutomationService) {}
 
@@ -126,8 +129,8 @@ export class SeoAutomationController {
 
   @Get("change-log")
   @AdminRoles("CONTENT_EDITOR")
-  async getChangeLog() {
-    return ok(await this.seoAutomationService.listChangeLog());
+  async getChangeLog(@Query() query: HistoryQueryDto) {
+    return ok(await this.seoAutomationService.listChangeLog(query.page, query.pageSize));
   }
 
   @Post("products/:id/seo/generate")

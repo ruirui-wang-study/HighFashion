@@ -13,6 +13,7 @@ import { ProductResearchImportService } from "./product-research-import.service"
 import {
   type AdminActor,
   candidateDetailInclude,
+  ensureCandidateExists,
   enumString,
   jsonValue,
   optionalString,
@@ -177,6 +178,74 @@ export class ProductResearchCandidateService {
       throw new NotFoundException({ code: "PRODUCT_RESEARCH_CANDIDATE_NOT_FOUND", message: "Candidate not found" });
     }
     return mapCandidateDetail(candidate);
+  }
+
+  async listCandidateScores(id: string, page?: number, pageSize?: number) {
+    await ensureCandidateExists(this.prisma, id);
+    const pagination = resolvePagination(page, pageSize);
+    const [total, scores] = await Promise.all([
+      this.prisma.productCandidateScore.count({
+        where: { candidateId: id },
+      }),
+      this.prisma.productCandidateScore.findMany({
+        where: { candidateId: id },
+        orderBy: { createdAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.pageSize,
+        select: {
+          id: true,
+          finalScore: true,
+          scoringVersion: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      items: scores.map((score) => ({
+        ...score,
+        createdAt: score.createdAt.toISOString(),
+      })),
+      total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+    };
+  }
+
+  async listCandidateSignals(id: string, page?: number, pageSize?: number) {
+    await ensureCandidateExists(this.prisma, id);
+    const pagination = resolvePagination(page, pageSize);
+    const [total, signals] = await Promise.all([
+      this.prisma.productResearchSignal.count({
+        where: { candidateId: id },
+      }),
+      this.prisma.productResearchSignal.findMany({
+        where: { candidateId: id },
+        orderBy: { collectedAt: "desc" },
+        skip: pagination.skip,
+        take: pagination.pageSize,
+        select: {
+          id: true,
+          source: true,
+          metricName: true,
+          metricValue: true,
+          rawData: true,
+          collectedAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      items: signals.map((signal) => ({
+        ...signal,
+        collectedAt: signal.collectedAt.toISOString(),
+      })),
+      total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pagination.pageSize)),
+    };
   }
 
   async listSuppliers() {

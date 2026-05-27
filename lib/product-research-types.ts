@@ -181,6 +181,37 @@ export type ProductResearchCandidateDetail = {
   }>;
 };
 
+export type ProductResearchCandidateScore = {
+  id: string;
+  finalScore: number;
+  scoringVersion: string;
+  createdAt: string;
+};
+
+export type ProductResearchCandidateSignal = {
+  id: string;
+  source: string;
+  metricName: string;
+  metricValue: number;
+  rawData?: unknown;
+  collectedAt: string;
+};
+
+export type ProductResearchHistoryPage<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type ProductResearchAssessmentRuntime = {
+  queueLength: number;
+  queuedUnique: number;
+  running: number;
+  concurrency: number;
+};
+
 export type ProductResearchImportPreviewItem = {
   productName: string;
   chineseName?: string | null;

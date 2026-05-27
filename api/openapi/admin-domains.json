@@ -1,0 +1,1276 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/admin/seo/automation/overview": {
+      "get": {
+        "operationId": "SeoAutomationController_getOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/automation/health-check/run": {
+      "post": {
+        "operationId": "SeoAutomationController_runHealthCheck",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/issues": {
+      "get": {
+        "operationId": "SeoAutomationController_getIssues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/issues/bulk-review": {
+      "post": {
+        "operationId": "SeoAutomationController_bulkReviewIssues",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/gsc/sync": {
+      "post": {
+        "operationId": "SeoAutomationController_syncGsc",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/ga4/sync": {
+      "post": {
+        "operationId": "SeoAutomationController_syncGa4",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/opportunities": {
+      "get": {
+        "operationId": "SeoAutomationController_getOpportunities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/opportunities/generate": {
+      "post": {
+        "operationId": "SeoAutomationController_generateOpportunities",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/opportunities/{id}/brief": {
+      "post": {
+        "operationId": "SeoAutomationController_createBrief",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/recommendations": {
+      "get": {
+        "operationId": "SeoAutomationController_getRecommendations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/recommendations/generate": {
+      "post": {
+        "operationId": "SeoAutomationController_generateRecommendations",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/recommendations/{id}/apply": {
+      "post": {
+        "operationId": "SeoAutomationController_applyRecommendation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/recommendations/{id}/reject": {
+      "post": {
+        "operationId": "SeoAutomationController_rejectRecommendation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/content-pipeline": {
+      "get": {
+        "operationId": "SeoAutomationController_getContentPipeline",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/content-pipeline/{id}/publish": {
+      "post": {
+        "operationId": "SeoAutomationController_publishBrief",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/internal-links": {
+      "get": {
+        "operationId": "SeoAutomationController_getInternalLinks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/internal-links/generate": {
+      "post": {
+        "operationId": "SeoAutomationController_generateInternalLinks",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/internal-links/{id}/apply": {
+      "post": {
+        "operationId": "SeoAutomationController_applyInternalLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/change-log": {
+      "get": {
+        "operationId": "SeoAutomationController_getChangeLog",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/products/{id}/seo/generate": {
+      "post": {
+        "operationId": "SeoAutomationController_generateProductSeoDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/seo/products/{id}/seo/apply": {
+      "post": {
+        "operationId": "SeoAutomationController_applyProductSeoDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-seo-automation"
+        ]
+      }
+    },
+    "/api/admin/product-research/dashboard": {
+      "get": {
+        "operationId": "ProductResearchController_getDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/assessment-runtime": {
+      "get": {
+        "operationId": "ProductResearchController_getAssessmentRuntime",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates": {
+      "get": {
+        "operationId": "ProductResearchController_listCandidates",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      },
+      "post": {
+        "operationId": "ProductResearchController_createCandidate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}": {
+      "get": {
+        "operationId": "ProductResearchController_getCandidateDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/scores": {
+      "get": {
+        "operationId": "ProductResearchController_listCandidateScores",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/signals": {
+      "get": {
+        "operationId": "ProductResearchController_listCandidateSignals",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/recalculate": {
+      "post": {
+        "operationId": "ProductResearchController_recalculateCandidate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/bulk-recalculate": {
+      "post": {
+        "operationId": "ProductResearchController_bulkRecalculateCandidates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCandidateActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/score-adjust": {
+      "post": {
+        "operationId": "ProductResearchController_manualAdjustScore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreManualAdjustmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/suppliers/{supplierId}": {
+      "patch": {
+        "operationId": "ProductResearchController_updateSupplierQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "supplierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierQuoteUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/decisions": {
+      "post": {
+        "operationId": "ProductResearchController_createDecision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/test-launches": {
+      "post": {
+        "operationId": "ProductResearchController_upsertTestLaunch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestLaunchUpsertDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/convert-to-product": {
+      "post": {
+        "operationId": "ProductResearchController_convertToProductDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/ai/preview": {
+      "post": {
+        "operationId": "ProductResearchController_previewAiImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiImportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/ai/commit": {
+      "post": {
+        "operationId": "ProductResearchController_commitAiImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiImportCommitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/csv/preview": {
+      "post": {
+        "operationId": "ProductResearchController_previewCsvImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/csv/commit": {
+      "post": {
+        "operationId": "ProductResearchController_commitCsvImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvImportCommitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/supplier-quotes/preview": {
+      "post": {
+        "operationId": "ProductResearchController_previewSupplierQuoteImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierQuoteImportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/supplier-quotes/commit": {
+      "post": {
+        "operationId": "ProductResearchController_commitSupplierQuoteImport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierQuoteImportCommitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/alibaba-links/preview": {
+      "post": {
+        "operationId": "ProductResearchController_previewAlibabaLinks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlibabaLinkImportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/alibaba-links/commit": {
+      "post": {
+        "operationId": "ProductResearchController_commitAlibabaLinks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlibabaLinkImportCommitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/risk-review": {
+      "get": {
+        "operationId": "ProductResearchController_listRiskReview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/candidates/{id}/risk-flags/{flagId}/resolve": {
+      "post": {
+        "operationId": "ProductResearchController_resolveRiskFlag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flagId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRiskFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/suppliers": {
+      "get": {
+        "operationId": "ProductResearchController_listSuppliers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/import/batches": {
+      "get": {
+        "operationId": "ProductResearchController_listImportBatches",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/decisions": {
+      "get": {
+        "operationId": "ProductResearchController_listDecisions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/test-launches": {
+      "get": {
+        "operationId": "ProductResearchController_listTestLaunches",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/scoring-rules": {
+      "get": {
+        "operationId": "ProductResearchController_listScoringRules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      },
+      "post": {
+        "operationId": "ProductResearchController_createScoringRule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScoringRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    },
+    "/api/admin/product-research/scoring-rules/{id}/activate": {
+      "post": {
+        "operationId": "ProductResearchController_activateScoringRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateScoringRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-product-research"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "PulseGear Admin Domains API",
+    "description": "OpenAPI schema for admin product-research and seo-automation domains",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateCandidateDto": {
+        "type": "object",
+        "properties": {
+          "productName": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "targetMarket": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productName",
+          "category",
+          "targetMarket"
+        ]
+      },
+      "BulkCandidateActionDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ScoreManualAdjustmentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SupplierQuoteUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DecisionCreateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TestLaunchUpsertDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AiImportPreviewDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AiImportCommitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CsvImportPreviewDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CsvImportCommitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SupplierQuoteImportPreviewDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SupplierQuoteImportCommitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AlibabaLinkImportPreviewDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AlibabaLinkImportCommitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResolveRiskFlagDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateScoringRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ActivateScoringRuleDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

@@ -18,7 +18,9 @@ import { SupplierQuoteUpdateDto } from "./dto/supplier-quote-update.dto";
 import { TestLaunchUpsertDto } from "./dto/test-launch-upsert.dto";
 import { ActivateScoringRuleDto } from "./dto/activate-scoring-rule.dto";
 import { ResolveRiskFlagDto } from "./dto/resolve-risk-flag.dto";
+import { HistoryQueryDto } from "../common/dto/history-query.dto";
 import { ProductResearchService } from "./product-research.service";
+import { ApiTags } from "@nestjs/swagger";
 
 type RequestWithAdmin = Request & {
   adminSession?: { sub: string; email: string; role: AdminRoleName };
@@ -26,6 +28,7 @@ type RequestWithAdmin = Request & {
 
 @Controller("admin/product-research")
 @UseGuards(AdminAuthGuard)
+@ApiTags("admin-product-research")
 export class ProductResearchController {
   constructor(private readonly productResearchService: ProductResearchService) {}
 
@@ -33,6 +36,12 @@ export class ProductResearchController {
   @AdminRoles("ANALYST")
   async getDashboard() {
     return ok(await this.productResearchService.getDashboard());
+  }
+
+  @Get("assessment-runtime")
+  @AdminRoles("ANALYST")
+  async getAssessmentRuntime() {
+    return ok(this.productResearchService.getAssessmentRuntime());
   }
 
   @Get("candidates")
@@ -51,6 +60,18 @@ export class ProductResearchController {
   @AdminRoles("ANALYST")
   async getCandidateDetail(@Param("id") id: string) {
     return ok(await this.productResearchService.getCandidateDetail(id));
+  }
+
+  @Get("candidates/:id/scores")
+  @AdminRoles("ANALYST")
+  async listCandidateScores(@Param("id") id: string, @Query() query: HistoryQueryDto) {
+    return ok(await this.productResearchService.listCandidateScores(id, query.page, query.pageSize));
+  }
+
+  @Get("candidates/:id/signals")
+  @AdminRoles("ANALYST")
+  async listCandidateSignals(@Param("id") id: string, @Query() query: HistoryQueryDto) {
+    return ok(await this.productResearchService.listCandidateSignals(id, query.page, query.pageSize));
   }
 
   @Post("candidates/:id/recalculate")

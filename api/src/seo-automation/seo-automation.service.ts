@@ -94,7 +94,7 @@ export class SeoAutomationService {
         needsReview: briefs.filter((item) => item.status === "NEEDS_REVIEW").length,
       },
       aiStatus,
-      recentChanges: logs.slice(0, 5),
+      recentChanges: logs.items.slice(0, 5),
     };
   }
 
@@ -146,8 +146,8 @@ export class SeoAutomationService {
     return this.internalLinkService.listInternalLinks();
   }
 
-  async listChangeLog(): Promise<SeoChangeLogItem[]> {
-    return this.changeLogService.listChangeLog();
+  async listChangeLog(page?: number, pageSize?: number) {
+    return this.changeLogService.listChangeLog(page, pageSize);
   }
 
   async generateProductSeoDraft(productId: string): Promise<ProductSeoDraft> {

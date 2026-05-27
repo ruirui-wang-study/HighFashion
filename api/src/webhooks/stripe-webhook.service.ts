@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PaymentStatus, Prisma, type Order, type OrderItem } from "@prisma/client";
 import Stripe from "stripe";
 import { PrismaService } from "../common/prisma.service";
+import { InventoryReservationService } from "../inventory/inventory-reservation.service";
+import { OrderInventoryAlertService } from "../notifications/order-inventory-alert.service";
 import { StripePaymentProvider } from "../payments/stripe-payment.provider";
 import { getCustomerCountryFromSession, getShippingAddressFromSession } from "./stripe-webhook.mapper";
 
@@ -13,11 +15,14 @@ const handledEvents = new Set([
 ]);
 
 type OrderWithItems = Order & { items: OrderItem[] };
+
 @Injectable()
 export class StripeWebhookService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripe: StripePaymentProvider,
+    private readonly inventory: InventoryReservationService,
+    private readonly inventoryAlerts: OrderInventoryAlertService,
   ) {}
 
   async handle(payload: Buffer, signature: string | undefined) {
@@ -42,7 +47,7 @@ export class StripeWebhookService {
     const paymentMethodType = isSuccessEvent(event.type) ? await this.getPaymentMethodType(session) : null;
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx) => {
         const order = await this.findOrder(tx, session);
 
         await tx.paymentEvent.create({
@@ -55,22 +60,46 @@ export class StripeWebhookService {
         });
 
         if (!order) {
-          return { processed: true, orderFound: false };
+          return { processed: true, orderFound: false, inventoryShort: false, orderId: null as string | null };
         }
 
         if (event.type === "checkout.session.async_payment_failed") {
           await this.markPaymentFailed(tx, order, session);
-          return { processed: true, orderNo: order.orderNo, status: "PAYMENT_FAILED" };
+          return {
+            processed: true,
+            orderNo: order.orderNo,
+            status: "PAYMENT_FAILED",
+            inventoryShort: false,
+            orderId: order.id,
+          };
         }
 
         if (event.type === "checkout.session.expired") {
           await this.markExpired(tx, order, session);
-          return { processed: true, orderNo: order.orderNo, status: "EXPIRED" };
+          return {
+            processed: true,
+            orderNo: order.orderNo,
+            status: "EXPIRED",
+            inventoryShort: false,
+            orderId: order.id,
+          };
         }
 
-        const paid = await this.markPaidAndDeductInventory(tx, order, session, paymentMethodType);
-        return { processed: true, orderNo: order.orderNo, status: paid ? "PAID" : order.status };
+        const paid = await this.markPaidAndConfirmInventory(tx, order, session, paymentMethodType);
+        return {
+          processed: true,
+          orderNo: order.orderNo,
+          status: paid.applied ? "PAID" : order.status,
+          inventoryShort: paid.inventoryShort,
+          orderId: order.id,
+        };
       });
+
+      if (result.inventoryShort && result.orderId) {
+        this.inventoryAlerts.notifyInventoryShort(result.orderId);
+      }
+
+      return result;
     } catch (error) {
       if (isUniqueConstraint(error, "stripeEventId")) {
         return { processed: false, duplicate: true };
@@ -93,13 +122,13 @@ export class StripeWebhookService {
     return tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
   }
 
-  private async markPaidAndDeductInventory(
+  private async markPaidAndConfirmInventory(
     tx: Prisma.TransactionClient,
     order: OrderWithItems,
     session: Stripe.Checkout.Session,
     paymentMethodType: string | null,
   ) {
-    if (order.status === "PAID") return false;
+    if (order.status === "PAID") return { applied: false, inventoryShort: false };
 
     const updated = await tx.order.updateMany({
       where: { id: order.id, status: { not: "PAID" } },
@@ -114,7 +143,7 @@ export class StripeWebhookService {
         billingAddress: this.getBillingAddress(session),
       },
     });
-    if (updated.count === 0) return false;
+    if (updated.count === 0) return { applied: false, inventoryShort: false };
 
     await tx.orderStatusEvent.create({
       data: {
@@ -130,27 +159,15 @@ export class StripeWebhookService {
       },
     });
 
-    for (const item of order.items) {
-      await tx.productVariant.update({
-        where: { id: item.variantId },
-        data: { stock: { decrement: item.quantity } },
-      });
-      await tx.inventoryMovement.create({
-        data: {
-          variantId: item.variantId,
-          orderId: order.id,
-          type: "SALE",
-          quantity: -item.quantity,
-          reason: `Stripe payment succeeded for ${order.orderNo}`,
-        },
-      });
-    }
-
-    return true;
+    const { inventoryShort } = await this.inventory.confirmForOrder(tx, order);
+    return { applied: true, inventoryShort };
   }
 
   private async markPaymentFailed(tx: Prisma.TransactionClient, order: OrderWithItems, session: Stripe.Checkout.Session) {
     if (order.status === "PAID") return;
+
+    await this.inventory.releaseForOrder(tx, order, `Payment failed for ${order.orderNo}`);
+
     await tx.order.update({
       where: { id: order.id },
       data: {
@@ -178,6 +195,9 @@ export class StripeWebhookService {
 
   private async markExpired(tx: Prisma.TransactionClient, order: OrderWithItems, session: Stripe.Checkout.Session) {
     if (order.status === "PAID") return;
+
+    await this.inventory.releaseForOrder(tx, order, `Checkout session expired for ${order.orderNo}`);
+
     await tx.order.update({
       where: { id: order.id },
       data: {

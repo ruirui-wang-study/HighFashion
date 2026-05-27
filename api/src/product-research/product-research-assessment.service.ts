@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { AiConfigService } from "../ai/ai-config.service";
 import { PrismaService } from "../common/prisma.service";
@@ -26,6 +26,12 @@ import {
 
 @Injectable()
 export class ProductResearchAssessmentService {
+  private readonly logger = new Logger(ProductResearchAssessmentService.name);
+  private readonly backgroundQueue: string[] = [];
+  private readonly backgroundQueued = new Set<string>();
+  private backgroundRunning = 0;
+  private readonly backgroundConcurrency = 3;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiConfigService: AiConfigService,
@@ -137,16 +143,15 @@ export class ProductResearchAssessmentService {
 
     const activatedRule = await this.prisma.scoringRule.findUniqueOrThrow({ where: { id } });
     if (!recalculateExisting) {
-      return { rule: activatedRule, recalculated: 0 };
+      return { rule: activatedRule, recalculated: 0, background: false };
     }
 
     const candidates = await this.prisma.productCandidate.findMany({
       select: { id: true },
     });
     const ids = candidates.map((candidate) => candidate.id);
-    await this.refreshCandidateAssessments(ids, actor);
-
-    return { rule: activatedRule, recalculated: ids.length };
+    const queued = this.enqueueCandidateAssessments(ids, actor, "scoring-rule-activation");
+    return { rule: activatedRule, recalculated: queued, background: true };
   }
 
   async recalculateCandidate(id: string, actor?: AdminActor) {
@@ -161,7 +166,7 @@ export class ProductResearchAssessmentService {
       throw new BadRequestException({ code: "PRODUCT_RESEARCH_BULK_EMPTY", message: "At least one candidate id is required" });
     }
 
-    await this.refreshCandidateAssessments(ids, actor);
+    const queued = this.enqueueCandidateAssessments(ids, actor, "bulk-recalculate");
 
     await this.prisma.auditLog.create({
       data: {
@@ -177,7 +182,7 @@ export class ProductResearchAssessmentService {
       },
     });
 
-    return { recalculated: ids.length };
+    return { recalculated: queued, background: true };
   }
 
   async resolveRiskFlag(candidateId: string, flagId: string, actor?: AdminActor, note?: string) {
@@ -307,6 +312,58 @@ export class ProductResearchAssessmentService {
     await runWithConcurrency(ids, concurrency, async (candidateId) => {
       await this.refreshCandidateAssessment(candidateId, actor);
     });
+  }
+
+  getAssessmentRuntime() {
+    return {
+      queueLength: this.backgroundQueue.length,
+      queuedUnique: this.backgroundQueued.size,
+      running: this.backgroundRunning,
+      concurrency: this.backgroundConcurrency,
+    };
+  }
+
+  enqueueCandidateAssessments(candidateIds: string[], actor?: AdminActor, reason = "manual") {
+    const ids = [...new Set(candidateIds.filter((value) => value.trim()))];
+    let queued = 0;
+    for (const id of ids) {
+      if (this.backgroundQueued.has(id)) continue;
+      this.backgroundQueued.add(id);
+      this.backgroundQueue.push(id);
+      queued += 1;
+    }
+    if (queued > 0) {
+      setImmediate(() => {
+        void this.drainBackgroundQueue(actor, reason);
+      });
+    }
+    return queued;
+  }
+
+  private async drainBackgroundQueue(actor?: AdminActor, reason = "manual") {
+    while (this.backgroundRunning < this.backgroundConcurrency && this.backgroundQueue.length > 0) {
+      const candidateId = this.backgroundQueue.shift();
+      if (!candidateId) continue;
+      this.backgroundRunning += 1;
+      void this.runBackgroundAssessment(candidateId, actor, reason);
+    }
+  }
+
+  private async runBackgroundAssessment(candidateId: string, actor?: AdminActor, reason = "manual") {
+    try {
+      await this.refreshCandidateAssessment(candidateId, actor);
+    } catch (error) {
+      this.logger.error(
+        `Background assessment failed for ${candidateId} (${reason})`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    } finally {
+      this.backgroundQueued.delete(candidateId);
+      this.backgroundRunning = Math.max(0, this.backgroundRunning - 1);
+      setImmediate(() => {
+        void this.drainBackgroundQueue(actor, reason);
+      });
+    }
   }
 
   async refreshCandidateAssessment(candidateId: string, actor?: AdminActor) {

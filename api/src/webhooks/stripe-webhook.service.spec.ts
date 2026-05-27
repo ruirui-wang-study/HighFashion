@@ -1,6 +1,8 @@
 import { PaymentStatus } from "@prisma/client";
 import Stripe from "stripe";
 import type { PrismaService } from "../common/prisma.service";
+import type { InventoryReservationService } from "../inventory/inventory-reservation.service";
+import type { OrderInventoryAlertService } from "../notifications/order-inventory-alert.service";
 import type { StripePaymentProvider } from "../payments/stripe-payment.provider";
 import { StripeWebhookService } from "./stripe-webhook.service";
 
@@ -50,12 +52,21 @@ describe("StripeWebhookService", () => {
       retrievePaymentIntentMethodType: jest.fn().mockResolvedValue("card"),
     } as unknown as StripePaymentProvider;
 
-    return { order, tx, prisma, stripe };
+    const inventory = {
+      confirmForOrder: jest.fn().mockResolvedValue({ inventoryShort: false }),
+      releaseForOrder: jest.fn().mockResolvedValue(undefined),
+    } as unknown as InventoryReservationService;
+
+    const inventoryAlerts = {
+      notifyInventoryShort: jest.fn(),
+    } as unknown as OrderInventoryAlertService;
+
+    return { order, tx, prisma, stripe, inventory, inventoryAlerts };
   }
 
   it("marks successful checkout sessions as paid and records a payment status event", async () => {
-    const { tx, prisma, stripe } = createDependencies();
-    const service = new StripeWebhookService(prisma, stripe);
+    const { tx, prisma, stripe, inventory, inventoryAlerts } = createDependencies();
+    const service = new StripeWebhookService(prisma, stripe, inventory, inventoryAlerts);
     const session = {
       id: "cs_test_123",
       metadata: { orderId: "order_1", orderNo: "PG1001" },
@@ -110,5 +121,30 @@ describe("StripeWebhookService", () => {
         toValue: PaymentStatus.PAID,
       }),
     });
+    expect(inventory.confirmForOrder).toHaveBeenCalledWith(tx, expect.objectContaining({ id: "order_1" }));
+    expect(inventoryAlerts.notifyInventoryShort).not.toHaveBeenCalled();
+  });
+
+  it("queues a Feishu alert when inventory confirmation is short", async () => {
+    const { prisma, stripe, inventory, inventoryAlerts } = createDependencies();
+    (inventory.confirmForOrder as jest.Mock).mockResolvedValue({ inventoryShort: true });
+    const service = new StripeWebhookService(prisma, stripe, inventory, inventoryAlerts);
+    const session = {
+      id: "cs_test_456",
+      metadata: { orderId: "order_1", orderNo: "PG1001" },
+      payment_intent: "pi_test_456",
+      payment_method_types: ["card"],
+      customer_details: { email: "runner@example.com" },
+    } as unknown as Stripe.Checkout.Session;
+
+    (stripe.constructWebhookEvent as jest.Mock).mockReturnValue({
+      id: "evt_2",
+      type: "checkout.session.completed",
+      data: { object: session },
+    } as Stripe.Event);
+
+    await service.handle(Buffer.from("payload"), "signature");
+
+    expect(inventoryAlerts.notifyInventoryShort).toHaveBeenCalledWith("order_1");
   });
 });

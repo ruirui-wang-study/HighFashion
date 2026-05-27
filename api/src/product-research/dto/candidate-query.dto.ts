@@ -1,7 +1,9 @@
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CandidateQueryDto {
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   search?: string;
@@ -34,12 +36,14 @@ export class CandidateQueryDto {
   @IsIn(["score-desc", "score-asc", "created-desc", "created-asc", "updated-desc", "updated-asc"])
   sort?: string;
 
+  @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
 
+  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 25 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

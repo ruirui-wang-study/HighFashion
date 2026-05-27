@@ -69,6 +69,7 @@ describe("normalizeOrderResponse", () => {
       status: "PAID",
       createdAt: "2026-05-22T00:00:00.000Z",
       paymentStatus: "PAID",
+      inventoryStatus: "OK",
       fulfillmentStatus: "UNFULFILLED",
       fulfilledAt: null,
       currency: "usd",

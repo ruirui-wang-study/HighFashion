@@ -8,6 +8,8 @@
     "start:dev": "node --watch -r ts-node/register src/main.ts",
     "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "test": "jest",
+    "openapi:generate": "node -r ts-node/register scripts/generate-openapi.ts",
+    "test:mimo": "node scripts/test-mimo.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
@@ -17,6 +19,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
     "@nestjs/platform-express": "^11.1.9",
+    "@nestjs/swagger": "^11.4.4",
     "@prisma/client": "^6.19.0",
     "@types/helmet": "^0.0.48",
     "class-transformer": "^0.5.1",
@@ -24,7 +27,8 @@
     "helmet": "^8.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "stripe": "^20.1.0"
+    "stripe": "^20.1.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.14",

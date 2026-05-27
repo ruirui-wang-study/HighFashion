@@ -100,7 +100,8 @@ function mapProductToFeedItem(
   const description = product.description?.trim() || product.shortDescription?.trim() || null;
   const link = product.slug ? resolveSiteUrl(config, `/products/${product.slug}`) : null;
   const price = firstVariant?.priceCents ? `${(firstVariant.priceCents / 100).toFixed(2)} USD` : null;
-  const availability = firstVariant ? (firstVariant.stock > 0 ? "in stock" : "out of stock") : null;
+  const availableStock = firstVariant ? Math.max(0, firstVariant.stock - firstVariant.reservedStock) : 0;
+  const availability = firstVariant ? (availableStock > 0 ? "in stock" : "out of stock") : null;
   const brand = "PulseGear";
   const condition = "new";
   const googleProductCategory = categoryToGoogleCategory(product.category);

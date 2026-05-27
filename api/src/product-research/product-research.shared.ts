@@ -12,6 +12,7 @@ export type AdminActor = {
 export const candidateDetailInclude = {
   scores: {
     orderBy: { createdAt: "desc" },
+    take: 5,
   },
   suppliers: {
     include: {
@@ -20,6 +21,7 @@ export const candidateDetailInclude = {
   },
   signals: {
     orderBy: [{ collectedAt: "desc" }],
+    take: 8,
   },
   riskFlags: {
     orderBy: { createdAt: "desc" },
@@ -364,15 +366,7 @@ export function candidateDuplicateKey(input: CandidateDuplicateKeyInput) {
   return `${input.productName.trim().toLowerCase()}|${input.category.trim().toLowerCase()}|${input.targetMarket.trim().toLowerCase()}`;
 }
 
-export function resolvePagination(page?: number, pageSize?: number) {
-  const resolvedPage = Number.isInteger(page) && (page ?? 0) > 0 ? page! : 1;
-  const resolvedPageSize = Number.isInteger(pageSize) && (pageSize ?? 0) > 0 ? Math.min(pageSize!, 100) : 25;
-  return {
-    page: resolvedPage,
-    pageSize: resolvedPageSize,
-    skip: (resolvedPage - 1) * resolvedPageSize,
-  };
-}
+export { paginatedResult, resolvePagination } from "../common/pagination";
 
 export async function loadCandidateDuplicateMap(
   prisma: PrismaService,

@@ -18,6 +18,7 @@ export type CreateCheckoutSessionInput = {
   }>;
   successUrl: string;
   cancelUrl: string;
+  checkoutExpiresAt?: number;
 };
 
 export type CheckoutSessionResult = {

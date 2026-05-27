@@ -54,6 +54,7 @@ export class StripePaymentProvider implements PaymentProvider {
       },
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
+      ...(input.checkoutExpiresAt ? { expires_at: input.checkoutExpiresAt } : {}),
     };
     const session = await this.stripe.checkout.sessions.create(params);
 

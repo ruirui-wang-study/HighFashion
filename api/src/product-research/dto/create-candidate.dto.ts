@@ -1,6 +1,8 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsIn, IsObject, IsOptional, IsString } from "class-validator";
 
 export class CreateCandidateDto {
+  @ApiProperty()
   @IsString()
   productName!: string;
 
@@ -12,9 +14,11 @@ export class CreateCandidateDto {
   @IsString()
   slugSuggestion?: string;
 
+  @ApiProperty()
   @IsString()
   category!: string;
 
+  @ApiProperty()
   @IsString()
   targetMarket!: string;
 

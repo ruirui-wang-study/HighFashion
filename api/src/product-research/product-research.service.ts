@@ -42,6 +42,14 @@ export class ProductResearchService {
     return this.candidateService.getCandidateDetail(id);
   }
 
+  listCandidateScores(id: string, page?: number, pageSize?: number) {
+    return this.candidateService.listCandidateScores(id, page, pageSize);
+  }
+
+  listCandidateSignals(id: string, page?: number, pageSize?: number) {
+    return this.candidateService.listCandidateSignals(id, page, pageSize);
+  }
+
   previewAiImport(payload: AiImportPreviewDto) {
     return this.importService.previewAiImport(payload);
   }
@@ -116,6 +124,10 @@ export class ProductResearchService {
 
   bulkRecalculateCandidates(payload: BulkCandidateActionDto, actor?: AdminActor) {
     return this.assessmentService.bulkRecalculateCandidates(payload, actor);
+  }
+
+  getAssessmentRuntime() {
+    return this.assessmentService.getAssessmentRuntime();
   }
 
   manualAdjustScore(id: string, payload: ScoreManualAdjustmentDto, actor?: AdminActor) {

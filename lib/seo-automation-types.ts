@@ -151,6 +151,14 @@ export type SeoChangeLogItem = {
   createdAt: string;
 };
 
+export type SeoChangeLogPage = {
+  items: SeoChangeLogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type ProductSeoDraft = {
   seoTitle: string;
   seoDescription: string;
