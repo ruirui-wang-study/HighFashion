@@ -28,4 +28,24 @@ export class CreateCheckoutSessionDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  @IsOptional()
+  @IsString()
+  quoteId?: string;
+
+  @IsOptional()
+  @IsString()
+  quoteExpiresAt?: string;
+
+  @IsOptional()
+  @IsString()
+  quoteSignature?: string;
+
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
 }

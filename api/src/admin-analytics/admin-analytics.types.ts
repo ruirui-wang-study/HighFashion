@@ -17,6 +17,12 @@ export type DashboardSummary = {
   conversionRate: number;
 };
 
+export type DashboardOpsHealth = {
+  pendingOver30m: number;
+  shortOrders: number;
+  webhookSuccessRate24h: number;
+};
+
 export type DashboardTopProduct = {
   productId: string;
   productTitle: string;
@@ -50,6 +56,7 @@ export type DashboardAnalyticsResponse = {
   rangeDays: number;
   ga4: AnalyticsConnectionStatus;
   summary: DashboardSummary;
+  opsHealth: DashboardOpsHealth;
   topProducts: DashboardTopProduct[];
   lowStockAlerts: DashboardLowStockAlert[];
   recentOrders: DashboardRecentOrder[];

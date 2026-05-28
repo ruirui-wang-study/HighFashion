@@ -75,6 +75,24 @@ export function AdminDashboardPageClient() {
             <AdminKpiCard label={copy.kpis.conversion} value={formatPercent(data.summary.conversionRate)} hint={copy.kpis.sessionsFallback} />
           </section>
 
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <AdminKpiCard
+              label={copy.opsHealth.pendingOver30m}
+              value={String(data.opsHealth.pendingOver30m)}
+              hint={copy.opsHealth.pendingOver30mHint}
+            />
+            <AdminKpiCard
+              label={copy.opsHealth.shortOrders}
+              value={String(data.opsHealth.shortOrders)}
+              hint={copy.opsHealth.shortOrdersHint}
+            />
+            <AdminKpiCard
+              label={copy.opsHealth.webhookSuccessRate24h}
+              value={formatPercent(data.opsHealth.webhookSuccessRate24h)}
+              hint={copy.opsHealth.webhookSuccessRate24hHint}
+            />
+          </section>
+
           <section className="grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
             <AdminChartPanel title={copy.topProducts} body={copy.topProductsBody}>
               <AdminBarChart

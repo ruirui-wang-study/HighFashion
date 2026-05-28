@@ -14,6 +14,11 @@ export type AdminDashboardAnalytics = {
     aovCents: number;
     conversionRate: number;
   };
+  opsHealth: {
+    pendingOver30m: number;
+    shortOrders: number;
+    webhookSuccessRate24h: number;
+  };
   topProducts: Array<{
     productId: string;
     productTitle: string;

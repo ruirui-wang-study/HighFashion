@@ -44,7 +44,10 @@ export function AdminSeoChangeLogPageClient() {
   );
 
   useEffect(() => {
-    void loadPage(1, false);
+    const timer = window.setTimeout(() => {
+      void loadPage(1, false);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadPage]);
 
   const canLoadMore = page < totalPages;

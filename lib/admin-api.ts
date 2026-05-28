@@ -1,6 +1,12 @@
 import type { AdminDashboardAnalytics, AdminFunnelAnalytics, AdminProductAnalytics, AdminSalesAnalytics, AnalyticsRangeDays } from "./admin-analytics-types";
 import type { AdminCollectionLanding, AdminCollectionLandingPayload, AdminFaq, AdminFaqPayload, AdminGuide, AdminGuidePayload, AdminStaticPage, AdminStaticPagePayload } from "./admin-content-types";
 import type { AdminMerchantFeedExport, AdminMerchantFeedOverview } from "./admin-marketing-types";
+import type {
+  CommerceQuoteSimulation,
+  CommerceRuleSetSummary,
+  CommerceRuleSetValidationResult,
+  UpsertCommerceRuleSetPayload,
+} from "./admin-commerce-rules-types";
 import type { AdminOrderDetail, AdminOrderListItem } from "./admin-orders-types";
 import type { AdminCopyConfig, AdminSettings, AdminSettingsInput } from "./admin-settings-types";
 import type { AdminSeoOverview, AdminSeoPages, AdminSeoQueries, SearchConsoleRangeDays } from "./admin-seo-types";
@@ -35,6 +41,7 @@ import type {
   ProductResearchSupplier,
   ProductResearchTestLaunch,
 } from "./product-research-types";
+import type { GeoDashboardSummary, GeoPrompt, GeoRecommendation, GeoTestRun } from "./admin-geo-types";
 
 type ApiResponse<T> = { success: true; data: T } | { success: false; error: { code: string; message: string } };
 
@@ -648,5 +655,109 @@ export function applyAdminProductSeoDraft(id: string, draft: ProductSeoDraft) {
     method: "POST",
     pathParams: { id },
     body: JSON.stringify(draft),
+  });
+}
+
+export function getActiveCommerceRuleSet() {
+  return adminApiFetch<unknown>("/api/admin/commerce/rules/active");
+}
+
+export function listCommerceRuleSets() {
+  return adminApiFetch<CommerceRuleSetSummary[]>("/api/admin/commerce/rules/sets");
+}
+
+export function upsertCommerceRuleSetDraft(payload: UpsertCommerceRuleSetPayload) {
+  return adminApiFetch<unknown>("/api/admin/commerce/rules/draft", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function validateCommerceRuleSetDraft(payload: UpsertCommerceRuleSetPayload) {
+  return adminApiFetch<CommerceRuleSetValidationResult>("/api/admin/commerce/rules/validate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function validateCommerceRuleSetById(id: string) {
+  return adminApiFetch<CommerceRuleSetValidationResult>(`/api/admin/commerce/rules/sets/${id}/validate`, {
+    method: "POST",
+  });
+}
+
+export function publishCommerceRuleSet(id: string) {
+  return adminApiFetch<unknown>(`/api/admin/commerce/rules/sets/${id}/publish`, {
+    method: "POST",
+  });
+}
+
+export function simulateCommerceQuote(payload: {
+  items: Array<{ variantId: string; quantity: number }>;
+  country?: string;
+  region?: string;
+  postalCode?: string;
+  currency?: string;
+}) {
+  return adminApiFetch<CommerceQuoteSimulation>("/api/admin/commerce/rules/simulate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminGeoSummary() {
+  return adminApiFetch<GeoDashboardSummary>("/api/admin/geo");
+}
+
+export function getAdminGeoPrompts() {
+  return adminApiFetch<GeoPrompt[]>("/api/admin/geo/prompts");
+}
+
+export function createAdminGeoPrompt(payload: { prompt: string; isActive?: boolean }) {
+  return adminApiFetch<GeoPrompt>("/api/admin/geo/prompts", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminGeoResults() {
+  return adminApiFetch<GeoTestRun[]>("/api/admin/geo/results");
+}
+
+export function createAdminGeoResult(payload: {
+  platform: "CHATGPT" | "PERPLEXITY" | "GEMINI" | "GOOGLE_AI_OVERVIEW";
+  promptId?: string;
+  prompt: string;
+  mentionedBrands?: string[];
+  citedUrls?: string[];
+  whetherPulseGearMentioned: boolean;
+  whetherPulseGearCited: boolean;
+  competitorBrands?: string[];
+  notes?: string;
+}) {
+  return adminApiFetch<GeoTestRun>("/api/admin/geo/results", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminGeoCompetitors() {
+  return adminApiFetch<Array<{ brand: string; count: number }>>("/api/admin/geo/competitors");
+}
+
+export function getAdminGeoRecommendations() {
+  return adminApiFetch<GeoRecommendation[]>("/api/admin/geo/recommendations");
+}
+
+export function createAdminGeoRecommendation(payload: {
+  query?: string;
+  pagePath?: string;
+  recommendation: string;
+  recommendationType: string;
+  priority?: string;
+}) {
+  return adminApiFetch<GeoRecommendation>("/api/admin/geo/recommendations", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }

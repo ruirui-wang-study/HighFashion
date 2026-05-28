@@ -145,3 +145,11 @@ export function buildGuideArticleStructuredData(guide: Guide): JsonLdNode {
     },
   };
 }
+
+export function buildGuideBreadcrumbStructuredData(guide: Guide) {
+  return buildBreadcrumbStructuredData([
+    { name: "Home", path: "/" },
+    { name: "Guides", path: "/guides" },
+    { name: guide.title, path: `/guides/${guide.slug}` },
+  ]);
+}

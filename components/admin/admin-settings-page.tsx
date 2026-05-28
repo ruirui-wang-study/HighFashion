@@ -88,6 +88,15 @@ export function AdminSettingsPage() {
           icon: MapPinned,
           badge: <AdminMerchantConnectionBadge connection={merchant} />,
         },
+        {
+          key: "commerce-rules",
+          title: zh ? "交易规则引擎" : "Commerce rules engine",
+          body: zh ? "集中管理税费、运费和支付方式规则，并支持发布前校验与报价模拟。" : "Manage tax, shipping, and payment rules in one place with validation and quote simulation before publish.",
+          actionLabel: zh ? "打开规则引擎" : "Open rules engine",
+          actionHref: "/admin/settings/commerce-rules",
+          icon: CreditCard,
+          badge: <span className="inline-flex rounded-full bg-lime/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-graphite">{zh ? "已接入" : "Available"}</span>,
+        },
       ],
       alerts: [
         zh ? "敏感凭据仍应保存在服务端的安全存储里，而不是这个后台表单。" : "Sensitive credentials still belong in a secure server-side store rather than this admin form.",

@@ -1,6 +1,200 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/admin/commerce/rules/active": {
+      "get": {
+        "operationId": "AdminCommerceRulesController_getActive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/sets": {
+      "get": {
+        "operationId": "AdminCommerceRulesController_listSets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/draft": {
+      "post": {
+        "operationId": "AdminCommerceRulesController_upsertDraft",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertCommerceRuleSetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/validate": {
+      "post": {
+        "operationId": "AdminCommerceRulesController_validateDraft",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertCommerceRuleSetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/sets/{id}/validate": {
+      "post": {
+        "operationId": "AdminCommerceRulesController_validateRuleSet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/sets/{id}/publish": {
+      "post": {
+        "operationId": "AdminCommerceRulesController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/admin/commerce/rules/simulate": {
+      "post": {
+        "operationId": "AdminCommerceRulesController_simulate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateCommerceQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminCommerceRules"
+        ]
+      }
+    },
+    "/api/checkout/quote": {
+      "post": {
+        "operationId": "CheckoutController_createQuote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
+    "/api/checkout/session": {
+      "post": {
+        "operationId": "CheckoutController_createSession",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
     "/api/admin/seo/automation/overview": {
       "get": {
         "operationId": "SeoAutomationController_getOverview",
@@ -1170,7 +1364,7 @@
   },
   "info": {
     "title": "PulseGear Admin Domains API",
-    "description": "OpenAPI schema for admin product-research and seo-automation domains",
+    "description": "OpenAPI schema for admin product-research, seo-automation, commerce-rules and checkout quote/session domains",
     "version": "1.0.0",
     "contact": {}
   },
@@ -1178,6 +1372,22 @@
   "servers": [],
   "components": {
     "schemas": {
+      "UpsertCommerceRuleSetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SimulateCommerceQuoteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCheckoutQuoteDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCheckoutSessionDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateCandidateDto": {
         "type": "object",
         "properties": {

@@ -10,6 +10,11 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         allow: "/",
         disallow: ["/cart", "/checkout", "/api", "/admin"],
       },
+      {
+        userAgent: ["OAI-SearchBot", "GPTBot"],
+        allow: ["/products/", "/collections/", "/guides/", "/faq", "/about", "/fit-guide"],
+        disallow: ["/cart", "/checkout", "/api", "/admin"],
+      },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,

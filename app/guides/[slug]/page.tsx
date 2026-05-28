@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getPublishedGuideBySlug, getPublishedGuides } from "@/lib/content-api";
 import { buildPageMetadata } from "@/lib/seo";
 import { getServerLocale } from "@/lib/server-locale";
-import { buildGuideArticleStructuredData } from "@/lib/structured-data";
+import { buildGuideArticleStructuredData, buildGuideBreadcrumbStructuredData } from "@/lib/structured-data";
 import { Button } from "@/components/ui/button";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductCard } from "@/components/product-card";
@@ -82,6 +82,7 @@ export default async function GuideDetailPage({ params }: { params: Promise<{ sl
   return (
     <>
       <JsonLd data={buildGuideArticleStructuredData(guide)} />
+      <JsonLd data={buildGuideBreadcrumbStructuredData(guide)} />
       <Section>
         <Container className="max-w-4xl">
           <nav className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-muted" aria-label="Breadcrumb">

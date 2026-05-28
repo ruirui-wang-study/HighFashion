@@ -51,6 +51,8 @@ type OrderLike = {
   customerCountry?: string | null;
   shippingAddress?: unknown;
   billingAddress?: unknown;
+  ruleSetVersion?: number | null;
+  pricingSnapshot?: unknown;
   items: Array<OrderItemLike>;
 };
 
@@ -74,6 +76,8 @@ export function normalizeOrderResponse(order: OrderLike) {
     stripePaymentIntentId: order.stripePaymentIntentId ?? null,
     paymentMethodType: order.paymentMethodType ?? null,
     customerCountry: order.customerCountry ?? null,
+    ruleSetVersion: order.ruleSetVersion ?? null,
+    pricingSnapshot: order.pricingSnapshot ?? null,
     shippingAddress: normalizeShippingAddress(order.shippingAddress),
     billingAddress: normalizeBillingAddress(order.billingAddress),
     items: order.items.map((item) => ({

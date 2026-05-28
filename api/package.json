@@ -12,7 +12,10 @@
     "test:mimo": "node scripts/test-mimo.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "sql:schema": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/sql/01_full_schema.sql",
+    "sql:bundle": "node prisma/sql/scripts/build-sql-bundle.mjs",
+    "sql:seed": "node prisma/sql/scripts/generate-seed-sql.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",

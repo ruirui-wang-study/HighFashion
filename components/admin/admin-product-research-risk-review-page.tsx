@@ -30,7 +30,11 @@ export function AdminProductResearchRiskReviewPageClient() {
   }
 
   useEffect(() => {
-    void loadQueue();
+    const timer = window.setTimeout(() => {
+      void loadQueue();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zh]);
 
   async function resolveFlag(candidateId: string, flagId: string) {

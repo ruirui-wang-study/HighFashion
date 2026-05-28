@@ -3,8 +3,11 @@ import { resolve } from "node:path";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "../src/app.module";
+import { AdminCommerceRulesModule } from "../src/admin-commerce-rules/admin-commerce-rules.module";
+import { CheckoutModule } from "../src/checkout/checkout.module";
 import { ProductResearchModule } from "../src/product-research/product-research.module";
 import { SeoAutomationModule } from "../src/seo-automation/seo-automation.module";
+import { AdminGeoModule } from "../src/admin-geo/admin-geo.module";
 
 async function generate() {
   const app = await NestFactory.create(AppModule, { logger: false });
@@ -12,12 +15,12 @@ async function generate() {
 
   const config = new DocumentBuilder()
     .setTitle("PulseGear Admin Domains API")
-    .setDescription("OpenAPI schema for admin product-research and seo-automation domains")
+    .setDescription("OpenAPI schema for admin product-research, seo-automation, geo, commerce-rules and checkout quote/session domains")
     .setVersion("1.0.0")
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {
-    include: [ProductResearchModule, SeoAutomationModule],
+    include: [ProductResearchModule, SeoAutomationModule, AdminGeoModule, AdminCommerceRulesModule, CheckoutModule],
   });
 
   const outputDir = resolve(process.cwd(), "openapi");

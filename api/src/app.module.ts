@@ -9,6 +9,8 @@ import { AdminContentModule } from "./admin-content/admin-content.module";
 import { AdminMarketingModule } from "./admin-marketing/admin-marketing.module";
 import { AdminOrdersModule } from "./admin-orders/admin-orders.module";
 import { AdminSettingsModule } from "./admin-settings/admin-settings.module";
+import { AdminCommerceRulesModule } from "./admin-commerce-rules/admin-commerce-rules.module";
+import { AdminGeoModule } from "./admin-geo/admin-geo.module";
 import { SeoAutomationModule } from "./seo-automation/seo-automation.module";
 import { ProductResearchModule } from "./product-research/product-research.module";
 import { ProductsModule } from "./products/products.module";
@@ -29,6 +31,8 @@ import { HealthModule } from "./health/health.module";
     AdminMarketingModule,
     AdminOrdersModule,
     AdminSettingsModule,
+    AdminCommerceRulesModule,
+    AdminGeoModule,
     SeoAutomationModule,
     ProductResearchModule,
     ProductsModule,

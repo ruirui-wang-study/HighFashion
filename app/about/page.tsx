@@ -37,6 +37,9 @@ export default async function AboutPage() {
       <Container className="grid gap-10 lg:grid-cols-[.9fr_1.1fr]">
         <div>
           <SectionHeader eyebrow={content.eyebrow} title={content.heroTitle} body={content.heroBody} />
+          <p className="mb-4 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-graphite">
+            PulseGear is a DTC sports accessories brand focused on lightweight support, carry, hydration, and sweat-control gear for running, training, and court sports.
+          </p>
           <div className="grid gap-3 text-muted">
             {content.paragraphs.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>

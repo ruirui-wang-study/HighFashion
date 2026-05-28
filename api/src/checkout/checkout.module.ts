@@ -10,5 +10,6 @@ import { CheckoutService } from "./checkout.service";
   imports: [ConfigModule, InventoryModule],
   controllers: [CheckoutController],
   providers: [CheckoutService, PrismaService, StripePaymentProvider],
+  exports: [CheckoutService],
 })
 export class CheckoutModule {}

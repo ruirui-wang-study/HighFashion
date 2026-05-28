@@ -92,6 +92,14 @@ export type LocaleMessages = {
         averageOrderValue: string;
         sessionsFallback: string;
       };
+      opsHealth: {
+        pendingOver30m: string;
+        pendingOver30mHint: string;
+        shortOrders: string;
+        shortOrdersHint: string;
+        webhookSuccessRate24h: string;
+        webhookSuccessRate24hHint: string;
+      };
       topProducts: string;
       topProductsBody: string;
       lowStockAlerts: string;
@@ -368,6 +376,14 @@ export const localeMessages: Record<Locale, LocaleMessages> = {
           paidFulfilled: "Paid and fulfilled orders",
           averageOrderValue: "Average order value",
           sessionsFallback: "Sessions are mock fallback",
+        },
+        opsHealth: {
+          pendingOver30m: "Pending > 30m",
+          pendingOver30mHint: "Orders waiting too long for payment confirmation",
+          shortOrders: "SHORT orders",
+          shortOrdersHint: "Paid orders that need manual inventory resolution",
+          webhookSuccessRate24h: "Webhook success (24h)",
+          webhookSuccessRate24hHint: "Successful payment events / handled events",
         },
         topProducts: "Top products",
         topProductsBody: "Ranked by revenue, then units sold.",
@@ -653,6 +669,14 @@ export const localeMessages: Record<Locale, LocaleMessages> = {
           paidFulfilled: "已支付与已履约订单",
           averageOrderValue: "平均订单金额",
           sessionsFallback: "Session 指标仍为 fallback",
+        },
+        opsHealth: {
+          pendingOver30m: "超 30 分钟待确认",
+          pendingOver30mHint: "等待支付确认时间过长的订单",
+          shortOrders: "SHORT 异常订单",
+          shortOrdersHint: "已支付但库存需人工处理的订单",
+          webhookSuccessRate24h: "Webhook 成功率(24h)",
+          webhookSuccessRate24hHint: "成功支付事件 / 已处理事件",
         },
         topProducts: "热门商品",
         topProductsBody: "按销售额排序，其次按销量排序。",

@@ -22,6 +22,7 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/product-research/dashboard", label: "Research", roles: ["VIEWER"] },
   { href: "/admin/analytics", label: "Analytics", roles: ["ANALYST"] },
   { href: "/admin/marketing/merchant-feed", label: "Marketing", roles: ["ANALYST"] },
+  { href: "/admin/geo", label: "GEO", roles: ["ANALYST"] },
   { href: "/admin/settings", label: "Settings", roles: ["ADMIN"] },
 ];
 

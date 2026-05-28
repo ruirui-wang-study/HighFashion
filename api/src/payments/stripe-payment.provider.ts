@@ -74,4 +74,8 @@ export class StripePaymentProvider implements PaymentProvider {
     const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
     return paymentIntent.payment_method_types[0] ?? null;
   }
+
+  async retrieveCheckoutSession(sessionId: string) {
+    return this.stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent", "customer"] });
+  }
 }

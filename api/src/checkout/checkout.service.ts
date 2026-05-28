@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { PrismaService } from "../common/prisma.service";
 import { getAvailableStock } from "../admin-products/inventory-policy";
 import { InventoryReservationService } from "../inventory/inventory-reservation.service";
 import { PENDING_ORDER_TTL_MS } from "../orders/order-maintenance.service";
 import { StripePaymentProvider } from "../payments/stripe-payment.provider";
+import { CreateCheckoutQuoteDto } from "./dto/create-checkout-quote.dto";
 import { CreateCheckoutSessionDto } from "./dto/create-checkout-session.dto";
 import { calculateShippingCents } from "./shipping";
 
@@ -17,63 +19,112 @@ export class CheckoutService {
     private readonly inventory: InventoryReservationService,
   ) {}
 
-  async createSession(input: CreateCheckoutSessionDto) {
-    const settings = await this.prisma.adminSettings.upsert({
-      where: { id: "default" },
-      update: {},
-      create: {
-        id: "default",
-        storefrontUrl: this.config.get<string>("FRONTEND_URL") ?? "http://localhost:3000",
-        supportEmail: "support@pulsegear.local",
-        checkoutCurrency: (this.config.get<string>("STRIPE_CURRENCY") ?? "usd").toLowerCase(),
-        timezone: "America/Los_Angeles",
-        shippingCountries: ["US", "GB"],
-        defaultFulfillmentSlaDays: 3,
-        returnsPolicyUrl: "/faq",
-        orderAutoFulfill: false,
-        primaryPaymentProvider: "Stripe Checkout",
-        stripeAutomaticPaymentMethods: true,
-        paymentFailureMessage: "Retry checkout from cart if payment is not confirmed.",
-        adminSessionTtlHours: 12,
-        auditLoggingEnabled: true,
-      },
+  async createQuote(input: CreateCheckoutQuoteDto) {
+    const settings = await this.getOrCreateSettings();
+    const normalizedItems = mergeItems(input.items);
+    const currency = (input.currency ?? settings.checkoutCurrency).toLowerCase();
+    const country = input.country?.toUpperCase();
+
+    const allowedShippingCountries = settings.shippingCountries.length ? settings.shippingCountries : ["US", "GB"];
+    if (country && !allowedShippingCountries.includes(country)) {
+      throw new BadRequestException({ code: "UNSUPPORTED_SHIPPING_COUNTRY", message: "Shipping country is not currently supported" });
+    }
+
+    const orderItems = await this.resolveOrderItems(normalizedItems);
+    const subtotalCents = orderItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
+    const pricingContext = await this.computePricingContext({
+      subtotalCents,
+      country,
+      region: input.region,
+      postalCode: input.postalCode,
+      currency,
     });
+
+    const quoteId = `q_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const quoteExpiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+    const payload = this.buildQuotePayload({
+      quoteId,
+      quoteExpiresAt,
+      items: normalizedItems,
+      country,
+      region: input.region,
+      postalCode: input.postalCode,
+      currency,
+      subtotalCents,
+      shippingCents: pricingContext.shippingCents,
+      taxCents: pricingContext.taxCents,
+      totalCents: subtotalCents + pricingContext.shippingCents + pricingContext.taxCents,
+      ruleSetVersion: pricingContext.ruleSetVersion,
+    });
+
+    return {
+      quoteId,
+      quoteExpiresAt,
+      quoteSignature: this.signQuotePayload(payload),
+      pricing: {
+        currency,
+        subtotalCents,
+        shippingCents: pricingContext.shippingCents,
+        taxCents: pricingContext.taxCents,
+        discountCents: 0,
+        totalCents: subtotalCents + pricingContext.shippingCents + pricingContext.taxCents,
+      },
+      ruleContext: {
+        ruleSetVersion: pricingContext.ruleSetVersion,
+        shippingRuleId: pricingContext.shippingRuleId,
+        taxRuleId: pricingContext.taxRuleId,
+        paymentRuleIds: pricingContext.paymentRuleIds,
+      },
+      availablePaymentMethods: pricingContext.availablePaymentMethods,
+    };
+  }
+
+  async createSession(input: CreateCheckoutSessionDto) {
+    const settings = await this.getOrCreateSettings();
 
     const currency = settings.checkoutCurrency.toLowerCase();
     const allowedShippingCountries = settings.shippingCountries.length ? settings.shippingCountries : ["US", "GB"];
-    if (input.country && !allowedShippingCountries.includes(input.country.toUpperCase())) {
+    const country = input.country?.toUpperCase();
+    if (country && !allowedShippingCountries.includes(country)) {
       throw new BadRequestException({ code: "UNSUPPORTED_SHIPPING_COUNTRY", message: "Shipping country is not currently supported" });
     }
 
     const normalizedItems = mergeItems(input.items);
+    const orderItems = await this.resolveOrderItems(normalizedItems);
+    const subtotalCents = orderItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
+    const pricingContext = await this.computePricingContext({
+      subtotalCents,
+      country,
+      region: input.region,
+      postalCode: input.postalCode,
+      currency,
+    });
+    const totalCents = subtotalCents + pricingContext.shippingCents + pricingContext.taxCents;
+
+    if (input.quoteId && input.quoteExpiresAt && input.quoteSignature) {
+      if (Date.parse(input.quoteExpiresAt) < Date.now()) {
+        throw new BadRequestException({ code: "QUOTE_EXPIRED", message: "Checkout quote has expired" });
+      }
+      const payload = this.buildQuotePayload({
+        quoteId: input.quoteId,
+        quoteExpiresAt: input.quoteExpiresAt,
+        items: normalizedItems,
+        country,
+        region: input.region,
+        postalCode: input.postalCode,
+        currency,
+        subtotalCents,
+        shippingCents: pricingContext.shippingCents,
+        taxCents: pricingContext.taxCents,
+        totalCents,
+        ruleSetVersion: pricingContext.ruleSetVersion,
+      });
+      this.assertQuoteSignature(payload, input.quoteSignature);
+    }
+
     const orderNo = `PG${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
     const order = await this.prisma.$transaction(async (tx) => {
-      const variants = await tx.productVariant.findMany({
-        where: { id: { in: normalizedItems.map((item) => item.variantId) }, active: true, product: { status: "ACTIVE" } },
-        include: { product: true },
-      });
-
-      if (variants.length !== normalizedItems.length) {
-        throw new BadRequestException({ code: "INVALID_VARIANT", message: "One or more product variants are unavailable" });
-      }
-
-      const orderItems = normalizedItems.map((item) => {
-        const variant = variants.find((entry) => entry.id === item.variantId);
-        if (!variant) throw new BadRequestException({ code: "INVALID_VARIANT", message: "Variant not found" });
-        if (getAvailableStock(variant) < item.quantity) {
-          throw new BadRequestException({
-            code: "INSUFFICIENT_STOCK",
-            message: `${variant.product.title} ${variant.color} ${variant.size} has insufficient stock`,
-          });
-        }
-        return { variant, quantity: item.quantity, lineTotalCents: variant.priceCents * item.quantity };
-      });
-
-      const subtotalCents = orderItems.reduce((sum, item) => sum + item.lineTotalCents, 0);
-      const shippingCents = calculateShippingCents(subtotalCents);
-      const totalCents = subtotalCents + shippingCents;
-
       const created = await tx.order.create({
         data: {
           orderNo,
@@ -81,10 +132,23 @@ export class CheckoutService {
           status: "PENDING",
           currency,
           subtotalCents,
-          shippingCents,
+          shippingCents: pricingContext.shippingCents,
           discountCents: 0,
           totalCents,
-          customerCountry: input.country,
+          customerCountry: country,
+          ruleSetVersion: pricingContext.ruleSetVersion,
+          pricingSnapshot: {
+            currency,
+            subtotalCents,
+            shippingCents: pricingContext.shippingCents,
+            taxCents: pricingContext.taxCents,
+            discountCents: 0,
+            totalCents,
+            ruleSetVersion: pricingContext.ruleSetVersion,
+            taxRuleId: pricingContext.taxRuleId,
+            shippingRuleId: pricingContext.shippingRuleId,
+            paymentRuleIds: pricingContext.paymentRuleIds,
+          },
           items: {
             create: orderItems.map(({ variant, quantity, lineTotalCents }) => ({
               productId: variant.productId,
@@ -109,7 +173,7 @@ export class CheckoutService {
         orderItems.map(({ variant, quantity }) => ({ variantId: variant.id, quantity })),
       );
 
-      return { created, orderItems, subtotalCents, shippingCents, totalCents };
+      return { created, orderItems, subtotalCents, shippingCents: pricingContext.shippingCents, totalCents };
     });
 
     const frontendUrl = settings.storefrontUrl || this.config.get<string>("FRONTEND_URL") || "http://localhost:3000";
@@ -161,6 +225,179 @@ export class CheckoutService {
         data: { status: "CANCELED" },
       });
     });
+  }
+
+  private async getOrCreateSettings() {
+    return this.prisma.adminSettings.upsert({
+      where: { id: "default" },
+      update: {},
+      create: {
+        id: "default",
+        storefrontUrl: this.config.get<string>("FRONTEND_URL") ?? "http://localhost:3000",
+        supportEmail: "support@pulsegear.local",
+        checkoutCurrency: (this.config.get<string>("STRIPE_CURRENCY") ?? "usd").toLowerCase(),
+        timezone: "America/Los_Angeles",
+        shippingCountries: ["US", "GB"],
+        defaultFulfillmentSlaDays: 3,
+        returnsPolicyUrl: "/faq",
+        orderAutoFulfill: false,
+        primaryPaymentProvider: "Stripe Checkout",
+        stripeAutomaticPaymentMethods: true,
+        paymentFailureMessage: "Retry checkout from cart if payment is not confirmed.",
+        adminSessionTtlHours: 12,
+        auditLoggingEnabled: true,
+      },
+    });
+  }
+
+  private async resolveOrderItems(items: Array<{ variantId: string; quantity: number }>) {
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: items.map((item) => item.variantId) }, active: true, product: { status: "ACTIVE" } },
+      include: { product: true },
+    });
+
+    if (variants.length !== items.length) {
+      throw new BadRequestException({ code: "INVALID_VARIANT", message: "One or more product variants are unavailable" });
+    }
+
+    return items.map((item) => {
+      const variant = variants.find((entry) => entry.id === item.variantId);
+      if (!variant) throw new BadRequestException({ code: "INVALID_VARIANT", message: "Variant not found" });
+      if (getAvailableStock(variant) < item.quantity) {
+        throw new BadRequestException({
+          code: "INSUFFICIENT_STOCK",
+          message: `${variant.product.title} ${variant.color} ${variant.size} has insufficient stock`,
+        });
+      }
+      return { variant, quantity: item.quantity, lineTotalCents: variant.priceCents * item.quantity };
+    });
+  }
+
+  private async computePricingContext(input: {
+    subtotalCents: number;
+    country?: string;
+    region?: string;
+    postalCode?: string;
+    currency: string;
+  }) {
+    const activeRuleSet = await this.prisma.commerceRuleSet.findFirst({
+      where: {
+        status: "ACTIVE",
+        OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: new Date() } }],
+        AND: [{ OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] }],
+      },
+      orderBy: { version: "desc" },
+    });
+
+    if (!activeRuleSet) {
+      return {
+        ruleSetVersion: null as number | null,
+        shippingRuleId: null as string | null,
+        taxRuleId: null as string | null,
+        paymentRuleIds: [] as string[],
+        shippingCents: calculateShippingCents(input.subtotalCents),
+        taxCents: 0,
+        availablePaymentMethods: ["CARD"],
+      };
+    }
+
+    const [shippingRule, taxRule, paymentRules] = await Promise.all([
+      this.prisma.shippingRule.findFirst({
+        where: {
+          ruleSetId: activeRuleSet.id,
+          enabled: true,
+          currency: input.currency,
+          countryCode: input.country ?? "US",
+          OR: [{ regionCode: null }, { regionCode: input.region ?? null }],
+        },
+        orderBy: { priority: "asc" },
+      }),
+      this.prisma.taxRule.findFirst({
+        where: {
+          ruleSetId: activeRuleSet.id,
+          enabled: true,
+          currency: input.currency,
+          countryCode: input.country ?? "US",
+          OR: [{ regionCode: null }, { regionCode: input.region ?? null }],
+        },
+        orderBy: { priority: "asc" },
+      }),
+      this.prisma.paymentMethodRule.findMany({
+        where: {
+          ruleSetId: activeRuleSet.id,
+          enabled: true,
+          currency: input.currency,
+          countryCode: input.country ?? "US",
+          OR: [{ minAmountMinor: null }, { minAmountMinor: { lte: input.subtotalCents } }],
+          AND: [{ OR: [{ maxAmountMinor: null }, { maxAmountMinor: { gte: input.subtotalCents } }] }],
+        },
+        orderBy: { priority: "asc" },
+      }),
+    ]);
+
+    const shippingCents = shippingRule
+      ? shippingRule.feeMode === "FREE_OVER_THRESHOLD"
+        ? input.subtotalCents >= (shippingRule.freeOverMinor ?? Number.MAX_SAFE_INTEGER)
+          ? 0
+          : shippingRule.flatFeeMinor ?? calculateShippingCents(input.subtotalCents)
+        : shippingRule.flatFeeMinor ?? calculateShippingCents(input.subtotalCents)
+      : calculateShippingCents(input.subtotalCents);
+
+    const taxCents = taxRule ? Math.round((input.subtotalCents * taxRule.rateBps) / 10_000) : 0;
+
+    return {
+      ruleSetVersion: activeRuleSet.version,
+      shippingRuleId: shippingRule?.id ?? null,
+      taxRuleId: taxRule?.id ?? null,
+      paymentRuleIds: paymentRules.map((rule) => rule.id),
+      shippingCents,
+      taxCents,
+      availablePaymentMethods: paymentRules.length ? paymentRules.map((rule) => rule.method) : ["CARD"],
+    };
+  }
+
+  private buildQuotePayload(input: {
+    quoteId: string;
+    quoteExpiresAt: string;
+    items: Array<{ variantId: string; quantity: number }>;
+    country?: string;
+    region?: string;
+    postalCode?: string;
+    currency: string;
+    subtotalCents: number;
+    shippingCents: number;
+    taxCents: number;
+    totalCents: number;
+    ruleSetVersion: number | null;
+  }) {
+    return JSON.stringify({
+      quoteId: input.quoteId,
+      quoteExpiresAt: input.quoteExpiresAt,
+      items: input.items,
+      country: input.country ?? null,
+      region: input.region ?? null,
+      postalCode: input.postalCode ?? null,
+      currency: input.currency,
+      subtotalCents: input.subtotalCents,
+      shippingCents: input.shippingCents,
+      taxCents: input.taxCents,
+      totalCents: input.totalCents,
+      ruleSetVersion: input.ruleSetVersion,
+    });
+  }
+
+  private signQuotePayload(payload: string) {
+    const secret = this.config.get<string>("CHECKOUT_QUOTE_SECRET") ?? this.config.get<string>("APP_SECRET") ?? "dev-checkout-secret";
+    return createHmac("sha256", secret).update(payload).digest("hex");
+  }
+
+  private assertQuoteSignature(payload: string, provided: string) {
+    const expected = this.signQuotePayload(payload);
+    const expectedBuffer = Buffer.from(expected, "utf8");
+    const providedBuffer = Buffer.from(provided, "utf8");
+    if (expectedBuffer.length !== providedBuffer.length || !timingSafeEqual(expectedBuffer, providedBuffer)) {
+      throw new BadRequestException({ code: "QUOTE_SIGNATURE_INVALID", message: "Checkout quote signature is invalid" });
+    }
   }
 }
 

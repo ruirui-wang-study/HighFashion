@@ -52,7 +52,10 @@ export function AdminProductResearchCandidatesPageClient() {
   );
 
   useEffect(() => {
-    void loadCandidates(1);
+    const timer = window.setTimeout(() => {
+      void loadCandidates(1);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadCandidates]);
 
   const allVisibleSelected = useMemo(() => items.length > 0 && items.every((item) => selectedIds.includes(item.id)), [items, selectedIds]);

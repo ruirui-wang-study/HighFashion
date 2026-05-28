@@ -47,9 +47,10 @@ export class AdminAnalyticsService {
   ) {}
 
   async getDashboardAnalytics(days: number): Promise<DashboardAnalyticsResponse> {
-    const [orders, lowStockAlerts] = await Promise.all([
+    const [orders, lowStockAlerts, opsHealth] = await Promise.all([
       this.loadOrders(days),
       this.loadLowStockAlerts(),
+      this.loadOpsHealth(),
     ]);
     const aggregates = aggregateOrders(orders);
     const behavior = this.mockProvider.getBehaviorMetrics(days);
@@ -64,6 +65,7 @@ export class AdminAnalyticsService {
         aovCents: aggregates.aovCents,
         conversionRate: behavior.sessions > 0 ? Number((aggregates.orders / behavior.sessions).toFixed(4)) : 0,
       },
+      opsHealth,
       topProducts: aggregates.topProducts.slice(0, 5),
       lowStockAlerts,
       recentOrders: orders
@@ -176,6 +178,45 @@ export class AdminAnalyticsService {
         lowStockThreshold: variant.lowStockThreshold,
         product: variant.product,
       }));
+  }
+
+  private async loadOpsHealth() {
+    const [pendingOver30m, shortOrders, successEvents, allHandledEvents] = await Promise.all([
+      this.prisma.order.count({
+        where: {
+          status: "PENDING",
+          createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) },
+        },
+      }),
+      this.prisma.order.count({
+        where: { inventoryStatus: "SHORT" },
+      }),
+      this.prisma.paymentEvent.count({
+        where: {
+          type: { in: ["checkout.session.completed", "checkout.session.async_payment_succeeded"] },
+          processedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+      this.prisma.paymentEvent.count({
+        where: {
+          type: {
+            in: [
+              "checkout.session.completed",
+              "checkout.session.async_payment_succeeded",
+              "checkout.session.async_payment_failed",
+              "checkout.session.expired",
+            ],
+          },
+          processedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+    ]);
+
+    return {
+      pendingOver30m,
+      shortOrders,
+      webhookSuccessRate24h: allHandledEvents > 0 ? Number((successEvents / allHandledEvents).toFixed(4)) : 0,
+    };
   }
 }
 

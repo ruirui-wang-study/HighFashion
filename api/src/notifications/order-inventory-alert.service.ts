@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../common/prisma.service";
-import { FeishuClient } from "./feishu/feishu.client";
+import { NotificationOutboxService } from "./notification-outbox.service";
 
 @Injectable()
 export class OrderInventoryAlertService {
@@ -9,7 +9,7 @@ export class OrderInventoryAlertService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly feishu: FeishuClient,
+    private readonly outbox: NotificationOutboxService,
     private readonly config: ConfigService,
   ) {}
 
@@ -19,6 +19,18 @@ export class OrderInventoryAlertService {
         JSON.stringify({
           event: "inventory_short_alert_failed",
           orderId,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    });
+  }
+
+  notifyInventoryDrift(rows: Array<{ variantId: string; from: number; to: number }>) {
+    void this.deliverInventoryDriftAlert(rows).catch((error) => {
+      this.logger.error(
+        JSON.stringify({
+          event: "inventory_drift_alert_failed",
+          count: rows.length,
           error: error instanceof Error ? error.message : String(error),
         }),
       );
@@ -47,14 +59,43 @@ export class OrderInventoryAlertService {
       "建议：尽快退款、换货或紧急补货并核对库存流水。",
     ];
 
-    const result = await this.feishu.sendTextMessage(lines.join("\n"));
+    const text = lines.join("\n");
+    await this.outbox.enqueueFeishu("inventory.short", text, `inventory-short:${order.id}`);
     this.logger.log(
       JSON.stringify({
-        event: "inventory_short_alert_sent",
+        event: "inventory_short_alert_queued",
         orderId: order.id,
         orderNo: order.orderNo,
-        mode: result.mode,
-        delivered: result.delivered,
+      }),
+    );
+  }
+
+  private async deliverInventoryDriftAlert(rows: Array<{ variantId: string; from: number; to: number }>) {
+    if (rows.length === 0) return;
+
+    const adminBaseUrl = await this.resolveAdminBaseUrl();
+    const lines = [
+      "【PulseGear 库存对账告警】检测到 reservedStock 漂移并已自动修正",
+      `修正数量：${rows.length}`,
+      "明细（最多 20 条）：",
+      ...rows.slice(0, 20).map((row) => `- variantId=${row.variantId} : ${row.from} -> ${row.to}`),
+      `后台排查入口：${adminBaseUrl}/admin/inventory`,
+      "建议：检查近期 RESERVATION/RELEASE/SALE 流水是否异常重放或遗漏。",
+    ];
+    if (rows.length > 20) {
+      lines.push(`... 其余 ${rows.length - 20} 条请查看 api.log（event=inventory_reserved_stock_reconciled）`);
+    }
+
+    const text = lines.join("\n");
+    const dedupeSuffix = rows
+      .slice(0, 20)
+      .map((row) => `${row.variantId}:${row.from}->${row.to}`)
+      .join("|");
+    await this.outbox.enqueueFeishu("inventory.drift", text, `inventory-drift:${dedupeSuffix}`);
+    this.logger.log(
+      JSON.stringify({
+        event: "inventory_drift_alert_queued",
+        count: rows.length,
       }),
     );
   }

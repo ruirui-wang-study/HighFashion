@@ -3,12 +3,14 @@ import Stripe from "stripe";
 import { StripePaymentProvider } from "./stripe-payment.provider";
 
 const createSession = jest.fn();
+const retrieveSession = jest.fn();
 
 jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     checkout: {
       sessions: {
         create: createSession,
+        retrieve: retrieveSession,
       },
     },
     webhooks: {

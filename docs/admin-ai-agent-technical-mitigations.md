@@ -1,8 +1,10 @@
 # Admin AI Agent 技术痛点与优化方案
 
-**关联**：[设计方案](./admin-ai-agent-design.md) | [现状能力](./admin-ai-capabilities.md) | [文档索引](./admin-ai-agent.md)
+**关联**：[设计方案 v2（痛点总表 §3）](./admin-ai-agent-design.md) | [现状能力](./admin-ai-capabilities.md) | [文档索引](./admin-ai-agent.md)
 
-本文档将 Agent 落地中的**技术坑**逐条对应到**可实施对策**与**代码落点**，作为 Phase 0 实现的检查清单。
+> **阅读顺序**：先看 [设计方案 §3 痛点—对策总表](./admin-ai-agent-design.md#31-痛点对策总表) 了解业务+技术全貌；本文是 Phase 0 **工程实施检查清单**（截断算法、Redis 字段、测试夹具等）。
+
+本文档将 Agent 落地中的**技术坑**逐条对应到**可实施对策**与**代码落点**。
 
 ---
 

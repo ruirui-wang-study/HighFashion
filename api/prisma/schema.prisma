@@ -36,6 +36,16 @@ enum OrderInventoryStatus {
   SHORT
 }
 
+enum NotificationChannel {
+  FEISHU
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum AdminRoleName {
   SUPER_ADMIN
   ADMIN
@@ -68,6 +78,31 @@ enum PaymentStatus {
 enum FulfillmentStatus {
   UNFULFILLED
   FULFILLED
+}
+
+enum RuleSetStatus {
+  DRAFT
+  STAGING
+  ACTIVE
+  ARCHIVED
+}
+
+enum TaxMode {
+  EXCLUSIVE
+  INCLUSIVE
+}
+
+enum ShippingFeeMode {
+  FLAT
+  FREE_OVER_THRESHOLD
+}
+
+enum PaymentMethodCode {
+  CARD
+  APPLE_PAY
+  GOOGLE_PAY
+  PAYPAL
+  BNPL
 }
 
 enum SeoPageType {
@@ -116,6 +151,19 @@ enum InternalLinkSuggestionStatus {
   NEW
   ACCEPTED
   REJECTED
+  APPLIED
+}
+
+enum GeoPlatform {
+  CHATGPT
+  PERPLEXITY
+  GEMINI
+  GOOGLE_AI_OVERVIEW
+}
+
+enum GeoRecommendationStatus {
+  DRAFT
+  REVIEWED
   APPLIED
 }
 
@@ -456,6 +504,99 @@ model InternalLinkSuggestion {
   updatedAt   DateTime                     @updatedAt
 
   @@index([status, priority])
+}
+
+model GeoPrompt {
+  id          String       @id @default(cuid())
+  prompt      String       @unique
+  isActive    Boolean      @default(true)
+  createdById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  testRuns    GeoTestRun[]
+
+  @@index([isActive, createdAt])
+}
+
+model GeoTestRun {
+  id                        String          @id @default(cuid())
+  platform                  GeoPlatform
+  promptId                  String?
+  promptText                String
+  notes                     String?
+  whetherPulseGearMentioned Boolean         @default(false)
+  whetherPulseGearCited     Boolean         @default(false)
+  actorId                   String?
+  createdAt                 DateTime        @default(now())
+  prompt                    GeoPrompt?      @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  citations                 GeoCitation[]
+  mentions                  GeoMention[]
+  competitors               GeoCompetitor[]
+
+  @@index([platform, createdAt])
+  @@index([promptId, createdAt])
+}
+
+model GeoCitation {
+  id        String     @id @default(cuid())
+  runId     String
+  url       String
+  title     String?
+  createdAt DateTime   @default(now())
+  run       GeoTestRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+model GeoMention {
+  id        String     @id @default(cuid())
+  runId     String
+  brand     String
+  isPulse   Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  run       GeoTestRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, isPulse])
+}
+
+model GeoCompetitor {
+  id        String     @id @default(cuid())
+  runId     String
+  brand     String
+  createdAt DateTime   @default(now())
+  run       GeoTestRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+model GeoRecommendation {
+  id              String                  @id @default(cuid())
+  query           String?
+  pagePath        String?
+  recommendation  String
+  recommendationType String
+  priority        String                  @default("MEDIUM")
+  status          GeoRecommendationStatus @default(DRAFT)
+  createdById     String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([status, priority])
+}
+
+model GeoContentDraft {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  contentType String
+  status      ContentStatus @default(DRAFT)
+  source      String?
+  payload     Json
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([contentType, status, createdAt])
 }
 
 model SeoChangeLog {
@@ -924,6 +1065,8 @@ model Order {
   customerCountry         String?
   shippingAddress         Json?
   billingAddress          Json?
+  ruleSetVersion          Int?
+  pricingSnapshot         Json?
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
   items                   OrderItem[]
@@ -935,6 +1078,82 @@ model Order {
   @@index([status])
   @@index([stripePaymentIntentId])
   @@index([paymentStatus, fulfillmentStatus])
+}
+
+model CommerceRuleSet {
+  id                String        @id @default(cuid())
+  name              String
+  version           Int
+  status            RuleSetStatus @default(DRAFT)
+  description       String?
+  effectiveFrom     DateTime?
+  effectiveTo       DateTime?
+  createdByAdminId  String?
+  publishedByAdminId String?
+  publishedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  taxRules          TaxRule[]
+  shippingRules     ShippingRule[]
+  paymentRules      PaymentMethodRule[]
+
+  @@unique([version])
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+model TaxRule {
+  id                String          @id @default(cuid())
+  ruleSetId         String
+  countryCode       String
+  regionCode        String?
+  postalCodePattern String?
+  currency          String
+  taxMode           TaxMode         @default(EXCLUSIVE)
+  rateBps           Int
+  priority          Int             @default(100)
+  enabled           Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  ruleSet           CommerceRuleSet @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+
+  @@index([ruleSetId, countryCode, regionCode, currency, priority])
+}
+
+model ShippingRule {
+  id              String          @id @default(cuid())
+  ruleSetId       String
+  countryCode     String
+  regionCode      String?
+  currency        String
+  feeMode         ShippingFeeMode
+  flatFeeMinor    Int?
+  freeOverMinor   Int?
+  priority        Int             @default(100)
+  enabled         Boolean         @default(true)
+  etaMinDays      Int?
+  etaMaxDays      Int?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  ruleSet         CommerceRuleSet @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+
+  @@index([ruleSetId, countryCode, regionCode, currency, priority])
+}
+
+model PaymentMethodRule {
+  id             String            @id @default(cuid())
+  ruleSetId      String
+  countryCode    String
+  currency       String
+  method         PaymentMethodCode
+  minAmountMinor Int?
+  maxAmountMinor Int?
+  enabled        Boolean           @default(true)
+  priority       Int               @default(100)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  ruleSet        CommerceRuleSet   @relation(fields: [ruleSetId], references: [id], onDelete: Cascade)
+
+  @@index([ruleSetId, countryCode, currency, method, priority])
 }
 
 model OrderNote {
@@ -1010,4 +1229,22 @@ model InventoryMovement {
   @@unique([orderId, variantId, type])
   @@index([variantId])
   @@index([orderId])
+}
+
+model NotificationOutbox {
+  id           String              @id @default(cuid())
+  channel      NotificationChannel
+  type         String
+  dedupeKey    String?             @unique
+  payload      Json
+  status       NotificationStatus  @default(PENDING)
+  attempts     Int                 @default(0)
+  lastError    String?
+  nextRetryAt  DateTime            @default(now())
+  sentAt       DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([status, nextRetryAt])
+  @@index([createdAt])
 }

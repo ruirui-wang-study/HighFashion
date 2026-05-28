@@ -9,4 +9,4 @@
 | 技术优化 | [docs/admin-ai-agent-technical-mitigations.md](../../admin-ai-agent-technical-mitigations.md) |
 | 现状能力 | [docs/admin-ai-capabilities.md](../../admin-ai-capabilities.md) |
 
-**状态**：设计稿；`api/src/ai/agent/` 未实现。
+**状态**：设计稿 v2（痛点整合版）；`api/src/ai/agent/` 未实现。主文档见 [admin-ai-agent-design.md](../../admin-ai-agent-design.md) §3 痛点矩阵。

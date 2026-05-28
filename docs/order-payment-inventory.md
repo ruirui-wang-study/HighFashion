@@ -287,6 +287,8 @@ flowchart LR
 | 可售库存策略 | `api/src/admin-products/inventory-policy.ts` |
 | Stripe Webhook | `api/src/webhooks/stripe-webhook.service.ts` |
 | 超时清理 | `api/src/orders/order-maintenance.service.ts` |
+| 支付补偿回查 | `api/src/orders/order-payment-reconcile.service.ts` |
+| 预留库存对账 | `api/src/inventory/inventory-reconcile.service.ts` |
 | 飞书客户端 | `api/src/notifications/feishu/feishu.client.ts` |
 | SHORT 告警 | `api/src/notifications/order-inventory-alert.service.ts` |
 | Schema | `api/prisma/schema.prisma` |
@@ -303,12 +305,28 @@ npm run prisma:migrate   # 应用 0016_inventory_reservation
 
 ---
 
-## 11. 后续可选项（未实现）
+## 11. 风险治理路线图（持续优化）
 
-- 后台「SHORT 订单」专用列表与筛选
-- 飞书卡片消息 / @ 值班人
-- Prometheus 指标：`checkout.insufficient_stock`、`webhook.inventory_short`
-- PgBouncer + 连接池调优（高并发场景）
+### 11.1 已落地
+
+| 项 | 状态 | 说明 |
+|----|------|------|
+| 预留库存 + 可售口径统一 | ✅ | 通过 `reservedStock` 避免超卖 |
+| 支付成功确认扣减 / 失败释放 | ✅ | 防止负库存与预留泄漏 |
+| PENDING 超时释放任务 | ✅ | `OrderMaintenanceService` 定时过期 |
+| SHORT 告警（飞书） | ✅ | 支付成功但确认失败可通知运营 |
+| 支付主动补偿回查 | ✅ | `OrderPaymentReconcileService` 定时回查 Stripe Session，兜底 webhook 延迟/丢失 |
+| 预留库存对账修正 | ✅ | `InventoryReconcileService` 定时核对 `reservedStock` 与流水净额并自动修正 |
+| 对账异常飞书告警 | ✅ | 对账修正后通过 `OrderInventoryAlertService` 发送漂移告警 |
+| 通知 Outbox + 自动重试 | ✅ | `NotificationOutbox` 持久化告警，`NotificationDispatcherService` 定时发送与指数退避 |
+| 运营健康指标聚合 | ✅ | Dashboard 增加 `pendingOver30m`、`shortOrders`、`webhookSuccessRate24h` 三项 |
+
+### 11.2 待落地（建议优先级）
+
+1. 后台「SHORT 订单」专用列表与处理状态（退款/补货/改发）。
+2. 对账异常自动建工单 / 人工处理状态闭环（当前仅告警）。
+4. Prometheus 指标：`order.pending.over_30m`、`inventory.short.count`、`webhook.process.success_rate`。
+5. PgBouncer + 连接池调优（高并发场景）。
 
 ---
 

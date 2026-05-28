@@ -4,15 +4,36 @@ import { AdminAnalyticsService } from "./admin-analytics.service";
 function createPrismaMock(overrides?: {
   orders?: unknown[];
   variants?: unknown[];
+  pendingOver30m?: number;
+  shortOrders?: number;
+  successEvents24h?: number;
+  handledEvents24h?: number;
 }) {
   const orders = (overrides?.orders ?? []) as Array<{ status: string }>;
   const variants = overrides?.variants ?? [];
+  const pendingOver30m = overrides?.pendingOver30m ?? 0;
+  const shortOrders = overrides?.shortOrders ?? 0;
+  const successEvents24h = overrides?.successEvents24h ?? 0;
+  const handledEvents24h = overrides?.handledEvents24h ?? 0;
 
   return {
     order: {
       findMany: jest.fn().mockImplementation(({ where }: { where?: { status?: { in?: string[] } } }) => {
         const allowed = where?.status?.in ?? [];
         return Promise.resolve(orders.filter((order) => allowed.length === 0 || allowed.includes(order.status)));
+      }),
+      count: jest.fn().mockImplementation(({ where }: { where?: { status?: string; inventoryStatus?: string } }) => {
+        if (where?.status === "PENDING") return Promise.resolve(pendingOver30m);
+        if (where?.inventoryStatus === "SHORT") return Promise.resolve(shortOrders);
+        return Promise.resolve(0);
+      }),
+    },
+    paymentEvent: {
+      count: jest.fn().mockImplementation(({ where }: { where?: { type?: { in?: string[] } } }) => {
+        const types = where?.type?.in ?? [];
+        const successTypes = ["checkout.session.completed", "checkout.session.async_payment_succeeded"];
+        const isSuccessCounter = types.every((type) => successTypes.includes(type));
+        return Promise.resolve(isSuccessCounter ? successEvents24h : handledEvents24h);
       }),
     },
     productVariant: {
@@ -32,6 +53,11 @@ describe("AdminAnalyticsService", () => {
     expect(result.summary.orders).toBe(0);
     expect(result.summary.aovCents).toBe(0);
     expect(result.summary.conversionRate).toBe(0);
+    expect(result.opsHealth).toEqual({
+      pendingOver30m: 0,
+      shortOrders: 0,
+      webhookSuccessRate24h: 0,
+    });
     expect(result.ga4.connected).toBe(false);
     expect(result.ga4.status).toBe("Not Connected");
     expect(result.topProducts).toEqual([]);
@@ -110,6 +136,10 @@ describe("AdminAnalyticsService", () => {
           },
         },
       ],
+      pendingOver30m: 3,
+      shortOrders: 1,
+      successEvents24h: 9,
+      handledEvents24h: 12,
     });
     const service = new AdminAnalyticsService(prisma);
 
@@ -126,6 +156,11 @@ describe("AdminAnalyticsService", () => {
       "CourtGrip Socks",
       "PulseFlex Knee Sleeve",
     ]);
+    expect(dashboard.opsHealth).toEqual({
+      pendingOver30m: 3,
+      shortOrders: 1,
+      webhookSuccessRate24h: 0.75,
+    });
 
     expect(sales.salesByCountry).toEqual([
       { country: "US", revenueCents: 12000, orders: 1 },

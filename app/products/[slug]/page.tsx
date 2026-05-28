@@ -8,7 +8,7 @@ import { getGuidesForProduct } from "@/data/guides";
 import { getProduct, getProducts } from "@/lib/api-client";
 import { buildProductMetadata } from "@/lib/seo";
 import { getServerLocale } from "@/lib/server-locale";
-import { buildProductBreadcrumbStructuredData, buildProductStructuredData } from "@/lib/structured-data";
+import { buildFaqStructuredData, buildProductBreadcrumbStructuredData, buildProductStructuredData } from "@/lib/structured-data";
 import { Container, Section, SectionHeader } from "@/components/ui/section";
 import { ProductVisual, BenefitGrid } from "@/components/product-visual";
 import { ProductPurchasePanel } from "@/components/product-purchase-panel";
@@ -83,10 +83,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         reviewQuotes: ["Stable without bulky seams.", "Works well in hot gym sessions.", "Easy to pack and clean."],
       };
 
+  const relatedCollections = [
+    { title: product.category, path: `/collections/${categoryToSlug(product.category)}` },
+  ];
+  const geoFaq = [
+    {
+      question: locale === "zh" ? `${product.title} 更适合哪些场景？` : `What is ${product.title} best for?`,
+      answer: locale === "zh"
+        ? `更适合 ${product.useCases.join("、")} 场景，重点是 support、comfort 和 training stability。`
+        : `Best for ${product.useCases.join(", ")} sessions with focus on support, comfort, and training stability.`,
+    },
+    {
+      question: locale === "zh" ? "如何清洗和护理？" : "How should I clean and care for it?",
+      answer: copy.materialsBody,
+    },
+  ];
+  const notDesignedFor = locale === "zh"
+    ? ["不用于医疗用途或疾病治疗。", "不替代专业医疗建议。", "不适用于超出产品尺寸范围的人群。"]
+    : ["Not intended for medical use or treatment.", "Does not replace professional medical advice.", "Not designed outside the listed size range."];
+
   return (
     <>
       <JsonLd data={buildProductStructuredData(product)} />
       <JsonLd data={buildProductBreadcrumbStructuredData(product)} />
+      <JsonLd data={buildFaqStructuredData(geoFaq)} />
       <Section>
         <Container className="grid gap-8 lg:grid-cols-[1.08fr_.92fr]">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -110,9 +130,36 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="rounded-[1.5rem] bg-warm p-6"><ShieldCheck className="h-7 w-7 text-signal" /><p className="mt-10 font-display text-3xl font-black uppercase tracking-[-0.05em]">{copy.materialsTitle}</p><p className="mt-3 text-muted">{copy.materialsBody}</p></div>
         </Container>
       </Section>
+      <Section>
+        <Container className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[1.5rem] bg-white p-6">
+            <h2 className="font-display text-3xl font-black uppercase tracking-[-0.05em]">{locale === "zh" ? "Best For / Use Cases" : "Best For / Use Cases"}</h2>
+            <ul className="mt-4 space-y-2 text-muted">{product.useCases.map((item) => <li key={item}>- {item}</li>)}</ul>
+          </div>
+          <div className="rounded-[1.5rem] bg-white p-6">
+            <h2 className="font-display text-3xl font-black uppercase tracking-[-0.05em]">{locale === "zh" ? "Not Designed For" : "Not Designed For"}</h2>
+            <ul className="mt-4 space-y-2 text-muted">{notDesignedFor.map((item) => <li key={item}>- {item}</li>)}</ul>
+          </div>
+          <div className="rounded-[1.5rem] bg-white p-6">
+            <h2 className="font-display text-3xl font-black uppercase tracking-[-0.05em]">{locale === "zh" ? "Shipping / Returns" : "Shipping / Returns"}</h2>
+            <p className="mt-4 text-muted">{locale === "zh" ? "标准发货时效 1-3 个工作日，详细条款请见政策页面。" : "Standard shipping SLA is 1-3 business days. See full policy for return eligibility details."}</p>
+          </div>
+          <div className="rounded-[1.5rem] bg-white p-6">
+            <h2 className="font-display text-3xl font-black uppercase tracking-[-0.05em]">{locale === "zh" ? "FAQ / Compare With" : "FAQ / Compare With"}</h2>
+            <div className="mt-4 space-y-3 text-muted">
+              {geoFaq.map((item) => (
+                <div key={item.question}>
+                  <p className="font-bold text-graphite">{item.question}</p>
+                  <p className="mt-1">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Container>
+      </Section>
       <Section><Container><SectionHeader eyebrow={copy.reviewsEyebrow} title={copy.reviewsTitle} /><div className="grid gap-4 md:grid-cols-3">{copy.reviewQuotes.map((review, index) => <div key={review} className="rounded-[1.5rem] bg-white p-5"><div className="mb-4 h-40 rounded-2xl bg-graphite speed-lines" /><div className="flex gap-1">{Array.from({ length: 5 }).map((_, star) => <Star key={star} className="h-4 w-4 fill-lime" />)}</div><p className="mt-4 font-bold">{review}</p><p className="mt-2 text-sm text-muted">{copy.reviewLabel} {index + 1}</p></div>)}</div></Container></Section>
       {relatedGuides.length > 0 ? <Section><Container><SectionHeader eyebrow={copy.relatedGuidesEyebrow} title={copy.relatedGuidesTitle} body={copy.relatedGuidesBody} /><div className="grid gap-5 md:grid-cols-2">{relatedGuides.map((guide) => <GuideCard key={guide.slug} guide={guide} />)}</div></Container></Section> : null}
-      <Section className="bg-white"><Container><SectionHeader eyebrow={copy.relatedEyebrow} title={copy.relatedTitle} /><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{related.map((item) => <ProductCard key={item.id} product={item} />)}</div></Container></Section>
+      <Section className="bg-white"><Container><SectionHeader eyebrow={copy.relatedEyebrow} title={copy.relatedTitle} /><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{related.map((item) => <ProductCard key={item.id} product={item} />)}</div><div className="mt-6 rounded-2xl bg-warm p-4 text-sm"><p className="font-bold">{locale === "zh" ? "Related Collections" : "Related Collections"}</p><div className="mt-2 flex flex-wrap gap-2">{relatedCollections.map((item) => <a key={item.path} href={item.path} className="rounded-full bg-white px-3 py-1">{item.title}</a>)}</div></div></Container></Section>
     </>
   );
 }

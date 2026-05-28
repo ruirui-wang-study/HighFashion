@@ -29,4 +29,5 @@ export type CheckoutSessionResult = {
 export interface PaymentProvider {
   createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CheckoutSessionResult>;
   constructWebhookEvent(payload: Buffer, signature: string): unknown;
+  retrieveCheckoutSession(sessionId: string): Promise<unknown>;
 }

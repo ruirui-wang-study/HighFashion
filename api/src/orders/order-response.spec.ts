@@ -20,6 +20,8 @@ describe("normalizeOrderResponse", () => {
       stripePaymentIntentId: "pi_123",
       paymentMethodType: "card",
       customerCountry: "US",
+      ruleSetVersion: null,
+      pricingSnapshot: null,
       shippingAddress: {
         name: "Taylor Runner",
         address: {
@@ -81,6 +83,8 @@ describe("normalizeOrderResponse", () => {
       stripePaymentIntentId: "pi_123",
       paymentMethodType: "card",
       customerCountry: "US",
+      ruleSetVersion: null,
+      pricingSnapshot: null,
       shippingAddress: {
         name: "Taylor Runner",
         address: {
