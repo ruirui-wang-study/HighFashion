@@ -1,0 +1,19 @@
+next-env.d.ts
+  s_a19009a056668f::t_3630e1ab3efe58 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1f49b6a296829f2e3f892c6f020cde51c88c7de0",
+  "prompts": {},
+  "sessions": {
+    "s_a19009a056668f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e3f73-5758-76e2-83b8-c19e061b0752",
+        "model": "unknown"
+      },
+      "human_author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
