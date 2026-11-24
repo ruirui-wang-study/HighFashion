@@ -1,0 +1,14 @@
+api/src/admin-geo/admin-geo.module.ts
+  h_bc6a84d59b5d9e 2,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f6bd590fd2be08410de3a78fd011a1b31b13f404",
+  "prompts": {},
+  "humans": {
+    "h_bc6a84d59b5d9e": {
+      "author": "rachel.wang <rachel.wang@jtexpress.com>"
+    }
+  }
+}
