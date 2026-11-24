@@ -24,6 +24,8 @@ const MIGRATION_ORDER = [
   "0015_product_research_risk_resolution",
   "0016_inventory_reservation",
   "20260525011718_product_research",
+  "20260528025917_add_checkout_pricing_rules",
+  "20260528171000_admin_geo_module",
 ];
 
 const migrationsOutDir = path.join(sqlRoot, "migrations");

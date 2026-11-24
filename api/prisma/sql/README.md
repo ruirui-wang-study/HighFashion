@@ -113,6 +113,8 @@ node prisma/sql/scripts/generate-seed-sql.mjs
 15. `0015_product_research_risk_resolution`
 16. `0016_inventory_reservation`
 17. `20260525011718_product_research`
+18. `20260528025917_add_checkout_pricing_rules`
+19. `20260528171000_admin_geo_module`
 
 ---
 

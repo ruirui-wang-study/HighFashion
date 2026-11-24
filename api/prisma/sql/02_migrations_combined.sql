@@ -1102,3 +1102,257 @@ CREATE INDEX "SearchConsoleQueryDaily_page_date_idx" ON "SearchConsoleQueryDaily
 -- RenameIndex
 ALTER INDEX "SearchConsoleQueryDaily_siteUrl_date_query_page_country_device_" RENAME TO "SearchConsoleQueryDaily_siteUrl_date_query_page_country_dev_key";
 
+-- >>> 20260528025917_add_checkout_pricing_rules
+-- CreateEnum
+CREATE TYPE "RuleSetStatus" AS ENUM ('DRAFT', 'STAGING', 'ACTIVE', 'ARCHIVED');
+
+-- CreateEnum
+CREATE TYPE "TaxMode" AS ENUM ('EXCLUSIVE', 'INCLUSIVE');
+
+-- CreateEnum
+CREATE TYPE "ShippingFeeMode" AS ENUM ('FLAT', 'FREE_OVER_THRESHOLD');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethodCode" AS ENUM ('CARD', 'APPLE_PAY', 'GOOGLE_PAY', 'PAYPAL', 'BNPL');
+
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN     "pricingSnapshot" JSONB,
+ADD COLUMN     "ruleSetVersion" INTEGER;
+
+-- CreateTable
+CREATE TABLE "CommerceRuleSet" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "status" "RuleSetStatus" NOT NULL DEFAULT 'DRAFT',
+    "description" TEXT,
+    "effectiveFrom" TIMESTAMP(3),
+    "effectiveTo" TIMESTAMP(3),
+    "createdByAdminId" TEXT,
+    "publishedByAdminId" TEXT,
+    "publishedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CommerceRuleSet_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TaxRule" (
+    "id" TEXT NOT NULL,
+    "ruleSetId" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "regionCode" TEXT,
+    "postalCodePattern" TEXT,
+    "currency" TEXT NOT NULL,
+    "taxMode" "TaxMode" NOT NULL DEFAULT 'EXCLUSIVE',
+    "rateBps" INTEGER NOT NULL,
+    "priority" INTEGER NOT NULL DEFAULT 100,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TaxRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ShippingRule" (
+    "id" TEXT NOT NULL,
+    "ruleSetId" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "regionCode" TEXT,
+    "currency" TEXT NOT NULL,
+    "feeMode" "ShippingFeeMode" NOT NULL,
+    "flatFeeMinor" INTEGER,
+    "freeOverMinor" INTEGER,
+    "priority" INTEGER NOT NULL DEFAULT 100,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "etaMinDays" INTEGER,
+    "etaMaxDays" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ShippingRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentMethodRule" (
+    "id" TEXT NOT NULL,
+    "ruleSetId" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "currency" TEXT NOT NULL,
+    "method" "PaymentMethodCode" NOT NULL,
+    "minAmountMinor" INTEGER,
+    "maxAmountMinor" INTEGER,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "priority" INTEGER NOT NULL DEFAULT 100,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PaymentMethodRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "CommerceRuleSet_status_effectiveFrom_effectiveTo_idx" ON "CommerceRuleSet"("status", "effectiveFrom", "effectiveTo");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CommerceRuleSet_version_key" ON "CommerceRuleSet"("version");
+
+-- CreateIndex
+CREATE INDEX "TaxRule_ruleSetId_countryCode_regionCode_currency_priority_idx" ON "TaxRule"("ruleSetId", "countryCode", "regionCode", "currency", "priority");
+
+-- CreateIndex
+CREATE INDEX "ShippingRule_ruleSetId_countryCode_regionCode_currency_prio_idx" ON "ShippingRule"("ruleSetId", "countryCode", "regionCode", "currency", "priority");
+
+-- CreateIndex
+CREATE INDEX "PaymentMethodRule_ruleSetId_countryCode_currency_method_pri_idx" ON "PaymentMethodRule"("ruleSetId", "countryCode", "currency", "method", "priority");
+
+-- AddForeignKey
+ALTER TABLE "TaxRule" ADD CONSTRAINT "TaxRule_ruleSetId_fkey" FOREIGN KEY ("ruleSetId") REFERENCES "CommerceRuleSet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ShippingRule" ADD CONSTRAINT "ShippingRule_ruleSetId_fkey" FOREIGN KEY ("ruleSetId") REFERENCES "CommerceRuleSet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentMethodRule" ADD CONSTRAINT "PaymentMethodRule_ruleSetId_fkey" FOREIGN KEY ("ruleSetId") REFERENCES "CommerceRuleSet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- >>> 20260528171000_admin_geo_module
+-- CreateEnum
+CREATE TYPE "GeoPlatform" AS ENUM ('CHATGPT', 'PERPLEXITY', 'GEMINI', 'GOOGLE_AI_OVERVIEW');
+
+-- CreateEnum
+CREATE TYPE "GeoRecommendationStatus" AS ENUM ('DRAFT', 'REVIEWED', 'APPLIED');
+
+-- CreateTable
+CREATE TABLE "GeoPrompt" (
+    "id" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "GeoPrompt_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoTestRun" (
+    "id" TEXT NOT NULL,
+    "platform" "GeoPlatform" NOT NULL,
+    "promptId" TEXT,
+    "promptText" TEXT NOT NULL,
+    "notes" TEXT,
+    "whetherPulseGearMentioned" BOOLEAN NOT NULL DEFAULT false,
+    "whetherPulseGearCited" BOOLEAN NOT NULL DEFAULT false,
+    "actorId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "GeoTestRun_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoCitation" (
+    "id" TEXT NOT NULL,
+    "runId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "title" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "GeoCitation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoMention" (
+    "id" TEXT NOT NULL,
+    "runId" TEXT NOT NULL,
+    "brand" TEXT NOT NULL,
+    "isPulse" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "GeoMention_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoCompetitor" (
+    "id" TEXT NOT NULL,
+    "runId" TEXT NOT NULL,
+    "brand" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "GeoCompetitor_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoRecommendation" (
+    "id" TEXT NOT NULL,
+    "query" TEXT,
+    "pagePath" TEXT,
+    "recommendation" TEXT NOT NULL,
+    "recommendationType" TEXT NOT NULL,
+    "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+    "status" "GeoRecommendationStatus" NOT NULL DEFAULT 'DRAFT',
+    "createdById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "GeoRecommendation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GeoContentDraft" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "contentType" TEXT NOT NULL,
+    "status" "ContentStatus" NOT NULL DEFAULT 'DRAFT',
+    "source" TEXT,
+    "payload" JSONB NOT NULL,
+    "createdById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "GeoContentDraft_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "GeoPrompt_prompt_key" ON "GeoPrompt"("prompt");
+
+-- CreateIndex
+CREATE INDEX "GeoPrompt_isActive_createdAt_idx" ON "GeoPrompt"("isActive", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "GeoTestRun_platform_createdAt_idx" ON "GeoTestRun"("platform", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "GeoTestRun_promptId_createdAt_idx" ON "GeoTestRun"("promptId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "GeoCitation_runId_idx" ON "GeoCitation"("runId");
+
+-- CreateIndex
+CREATE INDEX "GeoMention_runId_isPulse_idx" ON "GeoMention"("runId", "isPulse");
+
+-- CreateIndex
+CREATE INDEX "GeoCompetitor_runId_idx" ON "GeoCompetitor"("runId");
+
+-- CreateIndex
+CREATE INDEX "GeoRecommendation_status_priority_idx" ON "GeoRecommendation"("status", "priority");
+
+-- CreateIndex
+CREATE INDEX "GeoContentDraft_contentType_status_createdAt_idx" ON "GeoContentDraft"("contentType", "status", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "GeoContentDraft_slug_key" ON "GeoContentDraft"("slug");
+
+-- AddForeignKey
+ALTER TABLE "GeoTestRun" ADD CONSTRAINT "GeoTestRun_promptId_fkey" FOREIGN KEY ("promptId") REFERENCES "GeoPrompt"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GeoCitation" ADD CONSTRAINT "GeoCitation_runId_fkey" FOREIGN KEY ("runId") REFERENCES "GeoTestRun"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GeoMention" ADD CONSTRAINT "GeoMention_runId_fkey" FOREIGN KEY ("runId") REFERENCES "GeoTestRun"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GeoCompetitor" ADD CONSTRAINT "GeoCompetitor_runId_fkey" FOREIGN KEY ("runId") REFERENCES "GeoTestRun"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
