@@ -37,3 +37,8 @@ Thumbs.db
 
 # local reference materials
 *.xlsx
+
+# knowledge graph scripts & output (local experiments, not part of the repo)
+scripts/output/
+scripts/requirements-graph.txt
+scripts/user_knowledge_graph.py
